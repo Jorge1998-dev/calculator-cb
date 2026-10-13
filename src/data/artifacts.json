@@ -1,0 +1,755 @@
+[
+  {
+    "id": "life",
+    "name": "Life",
+    "nombreEs": "Vida",
+    "pieces": 2,
+    "category": "Básico (Campaña/Mazmorras)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "A",
+    "description": "Aumenta la Vida Máxima en un 15%.",
+    "statBonuses": {
+      "hpPercent": 15
+    },
+    "clanBossUtility": "Aumenta la supervivencia en composiciones basadas en HP y la escala de daño para campeones de daño por HP."
+  },
+  {
+    "id": "offense",
+    "name": "Offense",
+    "nombreEs": "Ataque",
+    "pieces": 2,
+    "category": "Básico (Campaña/Mazmorras)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "B",
+    "description": "Aumenta el Ataque en un 15%.",
+    "statBonuses": {
+      "atkPercent": 15
+    },
+    "clanBossUtility": "Mejora el daño directo de los nukers basados en Ataque (aunque el daño por Warmaster/Venenos suele ser más relevante)."
+  },
+  {
+    "id": "defense",
+    "name": "Defense",
+    "nombreEs": "Defensa",
+    "pieces": 2,
+    "category": "Básico (Campaña/Mazmorras)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "S",
+    "description": "Aumenta la Defensa en un 15%.",
+    "statBonuses": {
+      "defPercent": 15
+    },
+    "clanBossUtility": "Crucial para alcanzar el umbral de mitigación (3,500 - 4,200 DEF) en equipos tradicionales para sobrevivir los turnos 20 al 50."
+  },
+  {
+    "id": "critical_rate",
+    "name": "Critical Rate",
+    "nombreEs": "Probabilidad de Crítico",
+    "pieces": 2,
+    "category": "Básico (Campaña/Mazmorras)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "A",
+    "description": "Aumenta la Probabilidad de Crítico en un 12%.",
+    "statBonuses": {
+      "critRate": 12
+    },
+    "clanBossUtility": "Facilita alcanzar el 100% de Tasa Crítica en todos los campeones para maximizar daño directo y consistencia."
+  },
+  {
+    "id": "accuracy",
+    "name": "Accuracy",
+    "nombreEs": "Puntería",
+    "pieces": 2,
+    "category": "Básico (Campaña/Mazmorras)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "S",
+    "description": "Aumenta la Puntería en 40 puntos.",
+    "statBonuses": {
+      "acc": 40
+    },
+    "clanBossUtility": "Vital para asegurar los 220-250 de Puntería necesarios en Ultra Pesadilla para no fallar Disminuir ATK, DEF, Debilitar o Venenos."
+  },
+  {
+    "id": "speed",
+    "name": "Speed",
+    "nombreEs": "Velocidad",
+    "pieces": 2,
+    "category": "Básico (Campaña/Mazmorras)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": true,
+    "speedModifierConstant": 0.11999999987892807,
+    "clanBossTier": "SSS",
+    "description": "Aumenta la Velocidad en un 12%. Afectado por Sabiduría del Mal (+15% al bonus = +13.8% efectivo).",
+    "statBonuses": {
+      "spdPercent": 12
+    },
+    "clanBossUtility": "EL CONJUNTO REY PARA CLAN BOSS. Base indispensable para ajustar las velocidades exactas (Speed Tuning) a rangos 1:1, 2:1 o 3:1."
+  },
+  {
+    "id": "resistance",
+    "name": "Resistance",
+    "nombreEs": "Resistencia",
+    "pieces": 2,
+    "category": "Básico (Campaña/Mazmorras)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "C",
+    "description": "Aumenta la Resistencia en 40 puntos.",
+    "statBonuses": {
+      "res": 40
+    },
+    "clanBossUtility": "Poco usado en Clan Boss moderno ya que la afinidad y el Aturdimiento suelen gestionarse con Bloquear Desbufos o limpiadores dedicados."
+  },
+  {
+    "id": "critical_damage",
+    "name": "Critical Damage",
+    "nombreEs": "Daño Crítico",
+    "pieces": 2,
+    "category": "Básico (Campaña/Mazmorras)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "A",
+    "description": "Aumenta el Daño Crítico en un 20%.",
+    "statBonuses": {
+      "critDmg": 20
+    },
+    "clanBossUtility": "Multiplicador ofensivo directo para campeones DPS una vez cubiertos los requisitos de velocidad y supervivencia."
+  },
+  {
+    "id": "divine_life",
+    "name": "Divine Life",
+    "nombreEs": "Vida Divina",
+    "pieces": 2,
+    "category": "Divino (Cofres de Arena)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "A",
+    "description": "Aumenta la Vida en un 15% y otorga un Escudo de HP del 15% por 3 turnos al inicio del combate.",
+    "statBonuses": {
+      "hpPercent": 15
+    },
+    "clanBossUtility": "Otorga protección inicial en los primeros compases del combate y escala con Lore of Steel."
+  },
+  {
+    "id": "divine_offense",
+    "name": "Divine Offense",
+    "nombreEs": "Ataque Divino",
+    "pieces": 2,
+    "category": "Divino (Cofres de Arena)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "B",
+    "description": "Aumenta el Ataque en un 15% y otorga un Escudo de HP del 15% por 3 turnos.",
+    "statBonuses": {
+      "atkPercent": 15
+    },
+    "clanBossUtility": "Aporte de ataque plano con mitigación inicial."
+  },
+  {
+    "id": "divine_critical_rate",
+    "name": "Divine Critical Rate",
+    "nombreEs": "Probabilidad de Crítico Divina",
+    "pieces": 2,
+    "category": "Divino (Cofres de Arena)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "A",
+    "description": "Aumenta la Probabilidad de Crítico en un 12% y otorga un Escudo del 15% por 3 turnos.",
+    "statBonuses": {
+      "critRate": 12
+    },
+    "clanBossUtility": "Estabilidad de crítico y absorción de los primeros golpes AoE."
+  },
+  {
+    "id": "divine_speed",
+    "name": "Divine Speed",
+    "nombreEs": "Velocidad Divina",
+    "pieces": 2,
+    "category": "Divino (Cofres de Arena)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": true,
+    "speedModifierConstant": 0.11999999987892807,
+    "clanBossTier": "SSS",
+    "description": "Aumenta la Velocidad en un 12% y otorga un Escudo del 15% por 3 turnos. Afectado por Sabiduría del Mal.",
+    "statBonuses": {
+      "spdPercent": 12
+    },
+    "clanBossUtility": "Idéntico al Set de Velocidad con bono extra de escudo. Muy codiciado para speed tuning."
+  },
+  {
+    "id": "resilience",
+    "name": "Resilience",
+    "nombreEs": "Resiliencia",
+    "pieces": 2,
+    "category": "Forja (Guerra de Facciones)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "S",
+    "description": "Aumenta la Vida en un 10% y la Defensa en un 10%.",
+    "statBonuses": {
+      "hpPercent": 10,
+      "defPercent": 10
+    },
+    "clanBossUtility": "Excelente set híbrido para inflar los stats efectivos de tanqueo de todo el equipo."
+  },
+  {
+    "id": "perception",
+    "name": "Perception",
+    "nombreEs": "Percepción",
+    "pieces": 2,
+    "category": "Forja (Guerra de Facciones)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": true,
+    "speedModifierConstant": 0.049999999813735485,
+    "clanBossTier": "SSS",
+    "description": "Aumenta la Velocidad en un 5% y la Puntería en 40 puntos. Afectado por Sabiduría del Mal (+5.75% SPD).",
+    "statBonuses": {
+      "spdPercent": 5,
+      "acc": 40
+    },
+    "clanBossUtility": "EL MEJOR SET DE FORJA PARA CLAN BOSS. Resuelve los requerimientos de Puntería de debuffers mientras afina la True Speed."
+  },
+  {
+    "id": "cruel",
+    "name": "Cruel",
+    "nombreEs": "Cruel",
+    "pieces": 2,
+    "category": "Recompensas de Clan Boss",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "SS",
+    "description": "Aumenta el Ataque en un 15% e ignora el 5% de la Defensa del enemigo.",
+    "statBonuses": {
+      "atkPercent": 15,
+      "ignoreDef": 5
+    },
+    "clanBossUtility": "Excepcional para DPS de Clan Boss. Apilable hasta en 3 sets (15% ignore DEF + 45% ATK)."
+  },
+  {
+    "id": "immortal",
+    "name": "Immortal",
+    "nombreEs": "Inmortal",
+    "pieces": 2,
+    "category": "Recompensas de Clan Boss",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "S",
+    "description": "Aumenta la Vida en un 15% y regenera el 3% de la Vida Máxima al inicio de cada turno.",
+    "statBonuses": {
+      "hpPercent": 15,
+      "healPerTurn": 3
+    },
+    "clanBossUtility": "Ayuda a mantener la barra de vida por encima de los umbrales de aturdimiento y regenera salud en comps killable."
+  },
+  {
+    "id": "fatal",
+    "name": "Fatal",
+    "nombreEs": "Fatal",
+    "pieces": 2,
+    "category": "Forja (Torre del Destino)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "A",
+    "description": "Aumenta el Ataque en un 10% y la Probabilidad de Crítico en un 5%.",
+    "statBonuses": {
+      "atkPercent": 10,
+      "critRate": 5
+    },
+    "clanBossUtility": "Eficiencia de stats ofensivos para DPS."
+  },
+  {
+    "id": "frostbite",
+    "name": "Frostbite",
+    "nombreEs": "Congelación",
+    "pieces": 2,
+    "category": "Forja (Torre del Destino)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "C",
+    "description": "Aumenta la Resistencia en 15 puntos y otorga un 15% de probabilidad de bloquear Congelación.",
+    "statBonuses": {
+      "res": 15
+    },
+    "clanBossUtility": "Irrelevante para Clan Boss (el Clan Boss no congela)."
+  },
+  {
+    "id": "defiant",
+    "name": "Defiant",
+    "nombreEs": "Desafiante",
+    "pieces": 2,
+    "category": "Forja (Torre del Destino / Pase de Forja)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "SSS",
+    "description": "Aumenta la Defensa en un 10% y REDUCE el daño recibido por ataques de área (AoE) en un 15%.",
+    "statBonuses": {
+      "defPercent": 10,
+      "aoeDamageReduction": 15
+    },
+    "clanBossUtility": "TOP 1 MITIGACIÓN: 2 de los 3 ataques del Clan Boss son AoE. Equipar 2 o 3 sets reduce masivamente el daño entrante."
+  },
+  {
+    "id": "killstroke",
+    "name": "Killstroke",
+    "nombreEs": "Golpe Mortal",
+    "pieces": 2,
+    "category": "Forja (Torre del Destino)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": true,
+    "speedModifierConstant": 0.049999999813735485,
+    "clanBossTier": "SS",
+    "description": "Aumenta el Daño Crítico en un 20% y la Velocidad en un 5%. Afectado por Sabiduría del Mal.",
+    "statBonuses": {
+      "critDmg": 20,
+      "spdPercent": 5
+    },
+    "clanBossUtility": "Excelente combo de aceleración y daño crítico puro para nukers de Clan Boss."
+  },
+  {
+    "id": "fortitude",
+    "name": "Fortitude",
+    "nombreEs": "Entereza",
+    "pieces": 2,
+    "category": "Forja (Torre del Destino)",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "B",
+    "description": "Aumenta la Resistencia en 40 puntos y la Defensa en un 10%.",
+    "statBonuses": {
+      "res": 40,
+      "defPercent": 10
+    },
+    "clanBossUtility": "Utilizado como fuente secundaria de Defensa si no hay sets puros."
+  },
+  {
+    "id": "righteous",
+    "name": "Righteous",
+    "nombreEs": "Justiciero",
+    "pieces": 2,
+    "category": "Pase de Forja / Eventos Especiales",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": true,
+    "speedModifierConstant": 0.09999999986030161,
+    "clanBossTier": "SSS",
+    "description": "Aumenta la Velocidad en un 10% y la Resistencia en 40 puntos. Afectado por Sabiduría del Mal (+11.5% SPD).",
+    "statBonuses": {
+      "spdPercent": 10,
+      "res": 40
+    },
+    "clanBossUtility": "UNO DE LOS MEJORES SETS DE VELOCIDAD: Casi iguala al set de Velocidad y permite afinar True Speeds con máxima precisión."
+  },
+  {
+    "id": "impulse",
+    "name": "Impulse",
+    "nombreEs": "Impulso",
+    "pieces": 2,
+    "category": "Pase de Forja",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": true,
+    "speedModifierConstant": 0.11999999987892807,
+    "clanBossTier": "B",
+    "description": "Aumenta la Velocidad en un 12% y otorga un 12% de probabilidad de reducir el tiempo de reutilización de una habilidad al azar en 1 turno.",
+    "statBonuses": {
+      "spdPercent": 12
+    },
+    "clanBossUtility": "⚠️ RIESGO: Si bien da +12% SPD, la reducción aleatoria de enfriamiento puede DESINCRONIZAR habilidades de protección o inmortalidad."
+  },
+  {
+    "id": "zeal",
+    "name": "Zeal",
+    "nombreEs": "Celo",
+    "pieces": 2,
+    "category": "Pase de Forja / Eventos",
+    "affectsLoreOfSteel": true,
+    "speedTuneRelevant": false,
+    "clanBossTier": "A",
+    "description": "Aumenta el daño infligido en un 3% por cada 25% de salud que tenga el objetivo (hasta +12% de daño).",
+    "statBonuses": {},
+    "clanBossUtility": "Buen multiplicador general para daño directo."
+  },
+  {
+    "id": "lifesteal",
+    "name": "Lifesteal",
+    "nombreEs": "Robo de Vida",
+    "pieces": 4,
+    "category": "Avanzado (Dragón)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "SS",
+    "description": "El portador se cura un 30% del daño infligido.",
+    "statBonuses": {},
+    "clanBossUtility": "EL PILAR HISTÓRICO: En conjunto con la maestría Warmaster (65k de daño), cada activación cura completamente al campeón a tope de vida."
+  },
+  {
+    "id": "stalwart",
+    "name": "Stalwart",
+    "nombreEs": "Incondicional",
+    "pieces": 4,
+    "category": "Avanzado (Dragón)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "SSS",
+    "description": "Reduce el daño recibido por ataques de área (AoE) en un 30%.",
+    "statBonuses": {
+      "aoeDamageReduction": 30
+    },
+    "clanBossUtility": "EL REY DE LA MITIGACIÓN: Convierte a cualquier equipo killable en una fortaleza contra AOE1 y AOE2 del Clan Boss."
+  },
+  {
+    "id": "toxic",
+    "name": "Toxic",
+    "nombreEs": "Tóxico",
+    "pieces": 4,
+    "category": "Avanzado (Dragón)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "SSS",
+    "description": "Otorga un 50% de probabilidad en cada ataque de colocar un desbufo de Veneno del 2.5% por 2 turnos.",
+    "statBonuses": {},
+    "clanBossUtility": "GENERADOR DE DAÑO PASIVO MASIVO: Ideal para campeones que no tienen veneno en su kit (ej: Pain Keeper o Demytha) para sumar 50k por tick."
+  },
+  {
+    "id": "reflex",
+    "name": "Reflex",
+    "nombreEs": "Reflejos",
+    "pieces": 4,
+    "category": "Avanzado (Gólem de Hielo)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "A",
+    "description": "40% de probabilidad de reducir el tiempo de reutilización de una habilidad activa al azar en 1 turno.",
+    "statBonuses": {},
+    "clanBossUtility": "Útil en campeones con una sola habilidad activa con enfriamiento (ej: Demytha en ciertas comps) pero requiere tunear para evitar desincronías."
+  },
+  {
+    "id": "relentless",
+    "name": "Relentless",
+    "nombreEs": "Furia Vengadora",
+    "pieces": 4,
+    "category": "Torneos y Eventos",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "D (Peligro en Speed Tune) / S (En Comps Adaptables)",
+    "description": "18% de probabilidad de obtener un Turno Extra tras cualquier acción.",
+    "statBonuses": {},
+    "clanBossUtility": "⚠️ PELIGRO EXTREMO: El turno extra hace caer bufos de Inmortal y Bloquear Daño antes de tiempo, destruyendo composiciones fijas."
+  },
+  {
+    "id": "savage",
+    "name": "Savage",
+    "nombreEs": "Salvaje",
+    "pieces": 4,
+    "category": "Avanzado (Caballero del Fuego)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "SS",
+    "description": "Ignora el 25% de la Defensa del enemigo.",
+    "statBonuses": {
+      "ignoreDef": 25
+    },
+    "clanBossUtility": "Máximo daño directo para nukers (Ninja, Gnut, Acrizia, Turvold) en composiciones 1-Key donde la supervivencia ya está resuelta."
+  },
+  {
+    "id": "lethal",
+    "name": "Lethal",
+    "nombreEs": "Letal",
+    "pieces": 4,
+    "category": "Forja (Torre del Destino)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "SSS",
+    "description": "Aumenta la Probabilidad de Crítico en un 10% e ignora el 25% de la Defensa del enemigo.",
+    "statBonuses": {
+      "critRate": 10,
+      "ignoreDef": 25
+    },
+    "clanBossUtility": "Versión superior de Salvaje. El mejor set ofensivo de 4 piezas del juego para DPS de Clan Boss."
+  },
+  {
+    "id": "shield",
+    "name": "Shield",
+    "nombreEs": "Escudo",
+    "pieces": 4,
+    "category": "Avanzado (Caballero del Fuego)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "A",
+    "description": "Otorga a todos los aliados un Escudo igual al 30% del HP del portador por 3 turnos al inicio de la ronda.",
+    "statBonuses": {},
+    "clanBossUtility": "Mitigación temprana para estabilizar las primeras rondas del Clan Boss."
+  },
+  {
+    "id": "bolster",
+    "name": "Bolster",
+    "nombreEs": "Apoyo",
+    "pieces": 4,
+    "category": "Pase de Forja",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "SS",
+    "description": "Aumenta el HP en 20%, otorga un Escudo protegido del 30% del HP del portador por 3 turnos y cura a todos los aliados un 10% por turno.",
+    "statBonuses": {
+      "hpPercent": 20
+    },
+    "clanBossUtility": "Escudo inmune a ser removido más regeneración de salud continua para todo el escuadrón."
+  },
+  {
+    "id": "guardian",
+    "name": "Guardian",
+    "nombreEs": "Guardián",
+    "pieces": 4,
+    "category": "Forja (Torre del Destino)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "SS",
+    "description": "El portador absorbe el 10% del daño recibido por todos los aliados y se cura un 10% de su HP al inicio de cada turno.",
+    "statBonuses": {
+      "hpPercent": 10
+    },
+    "clanBossUtility": "Funciona como una mini Protección de Aliados pasiva que alivia la presión sobre los campeones más frágiles."
+  },
+  {
+    "id": "bloodthirst",
+    "name": "Bloodthirst",
+    "nombreEs": "Sed de Sangre",
+    "pieces": 4,
+    "category": "Forja (Torre del Destino)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "SS",
+    "description": "Aumenta la Probabilidad de Crítico en un 12%, cura un 30% del daño infligido y convierte la sobrecuración en un Escudo.",
+    "statBonuses": {
+      "critRate": 12
+    },
+    "clanBossUtility": "Versión mejorada de Robo de Vida que añade escudo con el exceso de curación."
+  },
+  {
+    "id": "regeneration",
+    "name": "Regeneration",
+    "nombreEs": "Regeneración",
+    "pieces": 4,
+    "category": "Avanzado (Caballero del Fuego)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "A",
+    "description": "Cura al portador un 15% de su Vida Máxima al inicio de cada uno de sus turnos.",
+    "statBonuses": {},
+    "clanBossUtility": "Muy utilizado en campeones tanque o de suporte que no hacen suficiente daño para curarse con Robo de Vida."
+  },
+  {
+    "id": "fury",
+    "name": "Fury",
+    "nombreEs": "Furia",
+    "pieces": 4,
+    "category": "Avanzado (Caballero del Fuego)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "A",
+    "description": "Aumenta el daño infligido en un 5% por cada 10% de salud que haya perdido el portador (hasta +25% de daño).",
+    "statBonuses": {},
+    "clanBossUtility": "Excelente en composiciones Inmortales / Unkillable donde los campeones permanecen a 1 de HP constantemente."
+  },
+  {
+    "id": "stoneskin",
+    "name": "Stoneskin",
+    "nombreEs": "Piel de Piedra",
+    "pieces": "1-9",
+    "category": "Mítico Variable (Jefes de Hidra)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "A",
+    "description": "Confiere HP, RES, DEF y activa el bufo 'Piel de Piedra' (1 a 2 turnos).",
+    "variableBonuses": [
+      "1 pieza: +8% HP",
+      "2 piezas: +40 RES",
+      "3 piezas: +15% DEF",
+      "4 piezas: Bufo Piel de Piedra por 1 turno (inmune a daño excepto bombas/quemadura)",
+      "5 piezas: +15% HP",
+      "6 piezas: Bufo Piel de Piedra por 2 turnos",
+      "7 piezas: +8% C.DMG",
+      "8 piezas: +40 RES",
+      "9 piezas: Bufo Piel de Piedra por 2 turnos + reduce daño de bombas/quemadura"
+    ],
+    "clanBossUtility": "Puede absorber los primeros turnos del Clan Boss, pero no es una solución para el turno 50."
+  },
+  {
+    "id": "protection",
+    "name": "Protection",
+    "nombreEs": "Protección",
+    "pieces": "1-9",
+    "category": "Mítico Variable (Jefes de Hidra)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": true,
+    "clanBossTier": "SSS",
+    "description": "Confiere Velocidad masiva (+12% con 2 piezas, +24% con 5 piezas) y protege bufos.",
+    "variableBonuses": [
+      "1 pieza: +20 RES",
+      "2 piezas: +12% SPD (Constante exacto de Speed Tune)",
+      "3 piezas: +15% HP",
+      "4 piezas: 30% probabilidad de proteger bufos colocados por este campeón",
+      "5 piezas: +12% SPD (Total acumulado: +24% SPD)",
+      "6 piezas: +15% HP, 75% probabilidad de proteger bufos",
+      "7 piezas: +5% daño por cada bufo activo en el portador",
+      "8 piezas: +20 RES",
+      "9 piezas: 100% probabilidad de proteger bufos colocados"
+    ],
+    "clanBossUtility": "IMPRESCINDIBLE: Permite alcanzar las velocidades más altas del juego (+24% SPD) y proteger bufos clave para que el Boss no los remueva."
+  },
+  {
+    "id": "supersonic",
+    "name": "Supersonic",
+    "nombreEs": "Supersónico",
+    "pieces": "1-9",
+    "category": "Mítico Variable (Ciudad Maldita / Sintranos)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": true,
+    "clanBossTier": "SSS",
+    "description": "Aumenta la Velocidad en múltiples tramos (+12%, +10%, +10%) y gestiona Turn Meter.",
+    "variableBonuses": [
+      "1 pieza: +5% RES",
+      "2 piezas: +12% SPD",
+      "3 piezas: Reduce efectos de reducción de TM en 30%",
+      "4 piezas: +10% SPD",
+      "5 piezas: Llena TM en 2% por cada bufo que expire",
+      "6 piezas: +10% SPD",
+      "7 piezas: +5% RES",
+      "8 piezas: Llena TM al recibir desbufos",
+      "9 piezas: +12% SPD adicional"
+    ],
+    "clanBossUtility": "Acelerador extremo para alcanzar ratios 2:1 o 3:1 con stats insanos."
+  },
+  {
+    "id": "merciless",
+    "name": "Merciless",
+    "nombreEs": "Despiadado",
+    "pieces": "1-9",
+    "category": "Mítico Variable (Ciudad Maldita / Sintranos)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": true,
+    "clanBossTier": "SS",
+    "description": "Confiere ATK, C.DMG, SPD, reducción de cooldowns, ignore DEF y probabilidad de turno extra.",
+    "variableBonuses": [
+      "1 pieza: +10% ATK",
+      "2 piezas: +10% C.DMG",
+      "3 piezas: +5% SPD",
+      "4 piezas: 30% prob de reducir cooldown de una habilidad al azar",
+      "5 piezas: +10% ATK",
+      "6 piezas: +15% C.DMG",
+      "7 piezas: +5% SPD",
+      "8 piezas: 35% prob de Turno Extra",
+      "9 piezas: Ignora 20% DEF"
+    ],
+    "clanBossUtility": "Monstruoso para daño en composiciones no restringidas por speed tune estricto."
+  },
+  {
+    "id": "slayer",
+    "name": "Slayer",
+    "nombreEs": "Asesino",
+    "pieces": "1-9",
+    "category": "Mítico Variable (Pase de Forja / Eventos)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": true,
+    "clanBossTier": "SS",
+    "description": "Otorga C.DMG, SPD, C.Rate e ignora DEF en ataques de área.",
+    "variableBonuses": [
+      "1 pieza: +15% C.DMG",
+      "2 piezas: +5% SPD",
+      "3 piezas: +5% C.Rate",
+      "4 piezas: Ignora 5% DEF en AoE y 30% prob de turno extra al matar",
+      "5 piezas: +5% SPD",
+      "6 piezas: Ignora 20% DEF",
+      "7 piezas: +15% C.DMG",
+      "8 piezas: +5% SPD",
+      "9 piezas: Ignora 30% DEF en habilidades AoE"
+    ],
+    "clanBossUtility": "Stats de velocidad y daño crítico premium."
+  },
+  {
+    "id": "pinpoint",
+    "name": "Pinpoint",
+    "nombreEs": "Precisión Milimétrica",
+    "pieces": "1-9",
+    "category": "Mítico Variable (Asedio / Siege)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": true,
+    "clanBossTier": "SS",
+    "description": "Otorga Puntería, Velocidad, Daño Crítico e ignore DEF no resistible.",
+    "variableBonuses": [
+      "1 pieza: +10 ACC",
+      "2 piezas: +5% SPD",
+      "3 piezas: +10% C.DMG",
+      "4 piezas: Ignora 5% DEF",
+      "5 piezas: +15 ACC",
+      "6 piezas: +5% SPD",
+      "7 piezas: Ignora 10% DEF",
+      "8 piezas: +15% C.DMG",
+      "9 piezas: Ignora 30% DEF irrestible"
+    ],
+    "clanBossUtility": "Híbrido de Puntería y Velocidad perfecto para debuffers."
+  },
+  {
+    "id": "refresh_accessory",
+    "name": "Refresh Accessory",
+    "nombreEs": "Accesorio de Refresco",
+    "pieces": "1-3",
+    "category": "Accesorios Especiales (Bazar de Tag Team Arena)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "B (Peligro de Desincronización)",
+    "description": "5% de probabilidad por accesorio (hasta 15% con Anillo, Amuleto y Estandarte) de evitar que una habilidad entre en enfriamiento tras su uso.",
+    "clanBossUtility": "⚠️ RIESGO: Si bien permite repetir habilidades, en speed tunes rígidos altera el orden de rotación."
+  },
+  {
+    "id": "cleansing_accessory",
+    "name": "Cleansing Accessory",
+    "nombreEs": "Accesorio de Limpieza",
+    "pieces": "1-3",
+    "category": "Accesorios Especiales (Bazar de Tag Team Arena)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "S",
+    "description": "8% de probabilidad por accesorio (hasta 24%) de remover 1 desbufo al inicio del turno del portador.",
+    "clanBossUtility": "Excelente red de seguridad para quitarse el Aturdimiento o la Reducción de Velocidad."
+  },
+  {
+    "id": "bloodshield_accessory",
+    "name": "Bloodshield Accessory",
+    "nombreEs": "Accesorio de Escudo de Sangre",
+    "pieces": "1-3",
+    "category": "Accesorios Especiales (Torneo de Clanes CvC)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "SS",
+    "description": "Otorga un Escudo igual al 5% del daño infligido por el portador tras cada ataque (dura 1 turno).",
+    "clanBossUtility": "GENERA ESCUDO CONSTANTE: Vital en composiciones Infinity Shield (Brogni) o para mitigar golpes del Boss."
+  },
+  {
+    "id": "reaction_accessory",
+    "name": "Reaction Accessory",
+    "nombreEs": "Accesorio de Reacción",
+    "pieces": "1-3",
+    "category": "Accesorios Especiales (Torneo de Clanes CvC)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "C",
+    "description": "25% de probabilidad por accesorio (hasta 75%) de convertir golpes críticos recibidos en golpes normales antes del primer turno.",
+    "clanBossUtility": "Orientado a PvP Arena; el Clan Boss no basa su amenaza en críticos tempranos."
+  },
+  {
+    "id": "revenge_accessory",
+    "name": "Revenge Accessory",
+    "nombreEs": "Accesorio de Venganza",
+    "pieces": "1-3",
+    "category": "Accesorios Especiales (Guerra de Clanes)",
+    "affectsLoreOfSteel": false,
+    "speedTuneRelevant": false,
+    "clanBossTier": "S",
+    "description": "5% de probabilidad por accesorio (hasta 15%) de contraatacar con la habilidad A1 cuando el portador es golpeado.",
+    "clanBossUtility": "Aumenta el daño total mediante contraataques gratuitos que aplican Warmaster y venenos sin gastar turnos."
+  }
+]

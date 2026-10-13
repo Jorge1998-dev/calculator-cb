@@ -1,0 +1,59 @@
+:root {
+  /* Color Palette - Gamer Tactical Dark Theme */
+  --bg-main: #0a0c10;
+  --bg-surface: #12161f;
+  --bg-surface-elevated: #1a202c;
+  --bg-card: rgba(22, 28, 40, 0.75);
+  --bg-card-hover: rgba(30, 38, 54, 0.85);
+  --bg-glass: rgba(16, 22, 34, 0.65);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-focus: #3b82f6;
+
+  /* Text Colors */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-highlight: #38bdf8;
+
+  /* Champion Slots Distinct Tactical Colors */
+  --slot-0-color: #3b82f6; /* Blue */
+  --slot-0-bg: rgba(59, 130, 246, 0.15);
+  --slot-1-color: #a855f7; /* Purple */
+  --slot-1-bg: rgba(168, 85, 247, 0.15);
+  --slot-2-color: #10b981; /* Green */
+  --slot-2-bg: rgba(16, 185, 129, 0.15);
+  --slot-3-color: #eab308; /* Yellow / Amber */
+  --slot-3-bg: rgba(234, 179, 8, 0.15);
+  --slot-4-color: #f97316; /* Orange / Coral */
+  --slot-4-bg: rgba(249, 115, 22, 0.15);
+
+  /* Clan Boss Theme */
+  --cb-red: #ef4444;
+  --cb-red-glow: rgba(239, 68, 68, 0.25);
+  --cb-aoe1: #dc2626;
+  --cb-aoe2: #b91c1c;
+  --cb-stun: #f59e0b;
+
+  /* Rarity Colors */
+  --rarity-mythical: #ff2244;
+  --rarity-legendary: #f59e0b;
+  --rarity-epic: #a855f7;
+  --rarity-rare: #3b82f6;
+  --rarity-uncommon: #22c55e;
+  --rarity-common: #94a3b8;
+
+  /* UI Tokens */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 20px rgba(56, 189, 248, 0.2);
+
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+}
