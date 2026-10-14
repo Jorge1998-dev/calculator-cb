@@ -819,6 +819,44 @@ Cada entrada en esta bitácora debe seguir rigurosamente el siguiente formato es
 
 ---
 
+### [ENTRADA-025] - 2026-10-13 | FEAT / UI / ASSETS | Integración y Registro Dinámico de Iconos en `src/assets/icons/` con Fallback Configurado por Defecto
+- **Autor / Rol:** Senior Full Stack React Developer & Arquitecto Frontend
+- **Supervisor:** Jorge
+- **Objetivo:** Cumplir con la directiva del supervisor Jorge: *"Primer cosa que corregir de este proyecto los iconos. No tengo algunos pero necesito que uses los que estan en icon registrados y si en caso no estan dejes el icono por defecto configurado"*.
+- **Detalle Técnico del Requerimiento:**
+  1. El supervisor integró en el repositorio la carpeta de activos `src/assets/icons/` con 32 iconos oficiales WebP que tiene actualmente disponibles.
+  2. Al no contar con la totalidad de los 90+ efectos de *Raid: Shadow Legends* (debufos como quemar HP, veneno, aturdir, reducción de estadísticas, etc.), el sistema no debe fallar ni cargar imágenes rotas ni sustituir arbitrariamente un bufo por otro no relacionado (como ocurría con el bufo de velocidad por defecto).
+  3. Los iconos registrados deben consumirse nativamente mediante Vite (`import.meta.glob`), y para cualquier efecto que no esté presente en la carpeta, debe presentarse un icono por defecto estético, oficial y configurable.
+- **Acciones Implementadas:**
+  1. **Módulo Central de Registro (`src/components/common/iconRegistry.ts`):**
+     - Descubrimiento automático e instantáneo de todos los archivos `.webp`, `.png` y `.svg` presentes en `src/assets/icons/` mediante `import.meta.glob('/src/assets/icons/*.{webp,png,svg}', { eager: true, import: 'default' })`.
+     - Normalización de nombres de archivo y aliases cruzados para nombres en inglés, español y claves técnicas de habilidades (ej. `shield` / `escudo` -> `escudo-habilidad`, `intercept` / `inmutable` -> `interceptar`, `speed-buff` / `speedup` / `spd_2` -> `aumentar-vel-2`, etc.).
+     - Detección semántica de si un efecto corresponde a bufo o debufo.
+  2. **Iconos por Defecto de Alta Fidelidad Visual (`default-buff.svg` y `default-debuff.svg`):**
+     - Diseñados en SVG vectorial puro de 64x64px con bordes y resplandores temáticos de *Raid: Shadow Legends*:
+       - `default-buff.svg`: Fondo azul oscuro/zafiro con borde cian/dorado resplandeciente y emblema de escudo/cresta ascendente con destello de poder.
+       - `default-debuff.svg`: Fondo carmesí/sangre con borde rojo fuego resplandeciente y daga/glifo de maleficio descendente.
+     - Ubicados tanto en `src/assets/icons/` como en `public/assets/buffs/` para máxima compatibilidad.
+  3. **Refactorización Integral de `RaidBuffIcon.tsx`:**
+     - Consume de forma reactiva `resolveRaidBuffIcon(name, type, defaultIcon)`.
+     - Si el efecto no está registrado en `src/assets/icons/`, despliega limpiamente el icono por defecto correspondiente (`DEFAULT_BUFF_ICON` o `DEFAULT_DEBUFF_ICON`) sin errores de consola.
+     - Manejo de `onError` en `<img>`: Si cualquier imagen remota o local fallase en tiempo de ejecución, conmuta de forma segura al icono por defecto configurado.
+     - Preservación íntegra de la chapa con contador de turnos restantes (`showDuration`), estilos de expiración crítica en turno 1 y tooltips informativos.
+  4. **Verificación y Pruebas:**
+     - Pruebas unitarias de resolución ejecutadas con 100% de éxito en `scratch/test_registry_logic.mjs`.
+     - 0 errores en ESLint (`npx eslint src`) y compilación limpia con Vite (`tsc -b && vite build`) en 450 ms con 973 módulos empaquetados.
+- **Archivos Afectados:**
+  - `src/assets/icons/default-buff.svg` (Nuevo)
+  - `src/assets/icons/default-debuff.svg` (Nuevo)
+  - `public/assets/buffs/default-buff.svg` (Nuevo)
+  - `public/assets/buffs/default-debuff.svg` (Nuevo)
+  - `src/components/common/iconRegistry.ts` (Nuevo)
+  - `src/components/common/RaidBuffIcon.tsx` (Refactorizado)
+  - `recursos/bitacora.md`
+- **Estado de Aprobación:** Resuelto y Verificado
+
+---
+
 ## 3. Registro de Decisiones de Arquitectura (ADRs)
 
 ### ADR-003: Arquitectura Client-Side Autónoma con Dataset Estático Local

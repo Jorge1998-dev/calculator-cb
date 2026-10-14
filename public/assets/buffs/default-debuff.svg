@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="debuffBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f87171"/>
+      <stop offset="50%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+    <radialGradient id="debuffBg" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#450a0a"/>
+      <stop offset="70%" stop-color="#1f0404"/>
+      <stop offset="100%" stop-color="#0a0202"/>
+    </radialGradient>
+    <filter id="debuffGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Frame Background -->
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="url(#debuffBg)" stroke="url(#debuffBorder)" stroke-width="2.5"/>
+
+  <!-- Inner Subtle Ring -->
+  <rect x="5" y="5" width="54" height="54" rx="8" fill="none" stroke="#ef4444" stroke-width="0.75" stroke-opacity="0.35"/>
+
+  <!-- Ominous Downward Blade / Skull / Hex Glyph -->
+  <g filter="url(#debuffGlow)">
+    <!-- Downward Chevrons (Negative / Reduction Effect) -->
+    <path d="M32 50 L18 38 L23 35 L32 44 L41 35 L46 38 Z" fill="#ef4444" opacity="0.95"/>
+    <path d="M32 40 L20 30 L24 27 L32 35 L40 27 L44 30 Z" fill="#f87171" opacity="0.85"/>
+    <!-- Broken Crest / Downward Sword Dagger Blade -->
+    <path d="M30 12 L34 12 L34 26 L38 24 L38 27 L32 34 L26 27 L26 24 L30 26 Z" fill="#fca5a5"/>
+    <circle cx="32" cy="18" r="2.5" fill="#fee2e2"/>
+  </g>
+</svg>
