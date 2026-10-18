@@ -850,10 +850,21 @@ export function runClanBossSimulation(
       const bossDebuffMultiplier = defMultiplier * weakenMultiplier;
 
       if (isTitus) {
-        const hasShield = actingActor.effects.some((e) => e.name === 'shield');
-        // El daño de Titus escala exponencialmente si hay Wixwell y escudo activo
-        const shieldScaleFactor = hasShield ? Math.min(bossTurnCount * 180000, 18000000) : 40000;
-        turnDamage = Math.round((60000 + shieldScaleFactor) * bossDebuffMultiplier);
+        if (chosenSkill.id === 'A3') {
+          // A3 (Confidente de Androc) es una habilidad de apoyo y bufos que no inflige daño directo
+          turnDamage = 0;
+        } else if (chosenSkill.id === 'A2') {
+          // A2 (Estudiante de la Guerra) es el golpe masivo que escala con el valor total del escudo y la pasiva "Por el Señor y la Tierra"
+          // Calibrado con telemetría empírica de Jorge (Turno 20: 1.325M, Turno 46: 7.677M)
+          const hasShield = actingActor.effects.some((e) => e.name === 'shield');
+          const shieldScaleFactor = hasShield
+            ? Math.min(Math.round(Math.pow(Math.max(bossTurnCount, 0), 2.2) * 829), 3800000)
+            : 40000;
+          turnDamage = Math.round((60000 + shieldScaleFactor) * bossDebuffMultiplier);
+        } else {
+          // A1 (Espada de Cuervo) es un ataque normal individual basado en DEF
+          turnDamage = Math.round((45000 + (bossTurnCount * 800)) * bossDebuffMultiplier);
+        }
       } else {
         turnDamage = Math.round((35000 + (bossTurnCount * 1200)) * bossDebuffMultiplier);
       }

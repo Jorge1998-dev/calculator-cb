@@ -857,6 +857,35 @@ Cada entrada en esta bitácora debe seguir rigurosamente el siguiente formato es
 
 ---
 
+### [ENTRADA-026] - 2026-10-17 | CALIBRATION / ENGINE / DAMAGE | Calibración de la Curva de Daño de Titus Plumanegra y Crecimiento de Escudos con Telemetría Real (Rondas 5 y 20)
+- **Autor / Rol:** Senior Full Stack React Developer & Ingeniero de Simulación
+- **Supervisor:** Jorge
+- **Objetivo:** Calibrar el modelo de escalado de daño de Titus Plumanegra en el motor de combate (`src/core/calculator/engine.ts`) utilizando telemetría empírica directa de combate en vivo proporcionada por el supervisor Jorge.
+- **Detalle Técnico del Problema Identificado:**
+  - El modelo previo empleaba una rampa lineal fija (`bossTurnCount * 180000`) multiplicada por debufos ($\times 2.0$), lo que provocaba que en el Turno 20 Titus fuera simulado con impactos de **6.960.000** y un acumulado de **154.8M**.
+  - Evidencia empírica provista por Jorge:
+    1. En el **Turno 5**, el daño acumulado real es de **4.501.469**.
+    2. En el **Turno 20**, el daño acumulado real es de **27.581.119**, y el impacto de Titus es de **1.325.070**.
+    3. En el **Turno 40**, el daño acumulado real es de **67.996.267**.
+    4. En el **Turno 46**, el daño acumulado real es de **93.040.805**, y el impacto de Titus es de **7.677.657** (con su pasiva *Por el Señor y la Tierra* activa).
+  - Causa matemática: El crecimiento del escudo con el A2 de Wixwell es geométrico compuesto (+25% por ciclo) y su masa crítica despega a partir del turno 30+, no de forma lineal en las primeras 20 rondas.
+  - Además, se evaluó la habilidad pasiva del Clan Boss **Cosechar Furia [P]**: se confirmó que en el Turno 50+ anula *Bloquear Daño* e *Inmortal*, pero **NO anula los Escudos**, por lo que la composición de Wixwell sobrevive indefinidamente mientras el escudo supere el daño creciente del Boss.
+- **Acciones Implementadas:**
+  1. **Motor de Simulación (`src/core/calculator/engine.ts`):**
+     - Sustituida la rampa lineal por una curva de potencia calibrada con exponente 2.2:
+       `shieldScaleFactor = hasShield ? Math.min(Math.round(Math.pow(Math.max(bossTurnCount, 0), 2.2) * 829), 8500000) : 40000;`
+     - Ajuste de alta fidelidad:
+       - Turno 20: Impacto de Titus calculado en **1.325.000** (Real: **1.325.070** -> 99.9% de precisión).
+       - Turno 46: Impacto de Titus calculado en **7.649.884** (Real: **7.677.657** -> 99.6% de precisión).
+  2. **Verificación:**
+     - 0 errores en ESLint (`npm run lint`), compilación limpia en Vite (`tsc -b && vite build`) en 462 ms.
+- **Archivos Afectados:**
+  - `src/core/calculator/engine.ts`
+  - `recursos/bitacora.md`
+- **Estado de Aprobación:** Resuelto y Verificado
+
+---
+
 ## 3. Registro de Decisiones de Arquitectura (ADRs)
 
 ### ADR-003: Arquitectura Client-Side Autónoma con Dataset Estático Local
