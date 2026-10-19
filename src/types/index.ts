@@ -84,7 +84,18 @@ export interface SkillConfig {
   isPassive?: boolean; // True if this skill is situational / passive (cannot be actively queued)
   disabled?: boolean; // True if this skill is blocked / "No Usar" in rotation
   isOpener?: boolean; // True if this skill is configured as the initial opening move (Apertura / Inicial)
+  damageBasedOn?: string[]; // e.g. ['DEF'], ['HP'], ['ATK'], ['DEF', 'HP']
+  damageStat?: DamageStatScaling;
 }
+
+export type DamageStatScaling =
+  | 'DEF'
+  | 'ATK'
+  | 'HP'
+  | 'DEF_HP' // Híbrido DEF + HP (Titus Plumanegra, tanques de salud)
+  | 'ATK_DEF' // Híbrido ATK + DEF
+  | 'ATK_HP' // Híbrido ATK + HP
+  | 'ATK_SPD'; // Híbrido ATK + SPD
 
 export type ArtifactSetChoice =
   | 'none'
@@ -153,6 +164,20 @@ export interface TeamMemberConfig {
   effectiveDefense: number; // Total DEF + Aura bonus
   damageMitigation: number; // % damage mitigation vs Clan Boss
   shieldMultiplier: number; // Shield durability factor (1 + DEF/1200)
+  // Estadísticas completas de combate para modelado de daño exacto
+  baseHP?: number;
+  totalHP?: number;
+  effectiveHP?: number;
+  baseAttack?: number;
+  totalAttack?: number;
+  effectiveAttack?: number;
+  baseCritRate?: number;
+  totalCritRate?: number; // P.Critic en % (ej. 100%)
+  effectiveCritRate?: number;
+  baseCritDamage?: number;
+  totalCritDamage?: number; // D.Critic en % (ej. 240%)
+  effectiveCritDamage?: number;
+  primaryStat?: DamageStatScaling;
   skillConfigs: SkillConfig[];
 }
 
@@ -230,6 +255,21 @@ export interface SimulationTurnLog {
   totalCumulativeDamage?: number;
 }
 
+export interface ChampionSyncMetric {
+  slotIndex: number;
+  championName: string;
+  slotColor?: string;
+  trueSpeed: number;
+  effectiveSpeed: number;
+  ratioVsBoss: number;
+  turnsTaken: number;
+  turnsPerBossTurn: number;
+  syncLabel: string;
+  isSynced: boolean;
+  damageDealt?: number;
+  damagePercent?: number;
+}
+
 export interface SimulationResult {
   turns: SimulationTurnLog[];
   totalBossTurns: number;
@@ -238,4 +278,8 @@ export interface SimulationResult {
   championDamageBreakdown?: Record<string, number>;
   maxShieldReached?: number;
   isInfiniteShieldSetup?: boolean;
+  bossDifficulty: ClanBossDifficulty;
+  bossAffinity: ClanBossAffinity;
+  bossSpeed: number;
+  championSyncMetrics?: ChampionSyncMetric[];
 }

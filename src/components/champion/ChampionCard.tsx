@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { TeamMemberConfig, ChampionData, AuraType, EquippedSet } from '../../types';
+import type { TeamMemberConfig, ChampionData, AuraType, EquippedSet, ClanBossDifficulty, ClanBossAffinity } from '../../types';
 import { detectChampionAura } from '../../core/calculator/auraUtils';
 import { parseChampionSkills } from '../../core/calculator/skillUtils';
 import { ChampionAvatar } from './ChampionAvatar';
@@ -11,6 +11,9 @@ interface ChampionCardProps {
   onSetAsLeader: (slotIndex: number) => void;
   leaderAuraType: AuraType;
   leaderAuraPercent: number;
+  bossSpeed?: number;
+  bossDifficulty?: ClanBossDifficulty;
+  bossAffinity?: ClanBossAffinity;
 }
 
 interface SetMeta {
@@ -86,6 +89,9 @@ export const ChampionCard: React.FC<ChampionCardProps> = ({
   onSetAsLeader,
   leaderAuraType,
   leaderAuraPercent,
+  bossSpeed = 190,
+  bossDifficulty = 'Ultra-Nightmare',
+  bossAffinity = 'Void',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -515,95 +521,336 @@ export const ChampionCard: React.FC<ChampionCardProps> = ({
         </div>
       )}
 
-      {/* Main Stats Row: Base SPD, Total SPD, Base DEF, Total DEF */}
-      <div className="stats-grid-4">
-        <div className="stat-field">
-          <label className="stat-label">Base SPD</label>
-          <input
-            type="number"
-            className="stat-input"
-            value={member.baseSpeed}
-            onChange={(e) =>
-              onUpdate({ ...member, baseSpeed: Math.max(1, parseInt(e.target.value) || 0) })
-            }
-          />
+      {/* Sección Completa de Estadísticas de Combate & Escalado de Daño */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.5px' }}>
+            ⚔️ ESTADÍSTICAS DE COMBATE Y MODELADO DE DAÑO
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <label style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Escala Daño con:</label>
+            <select
+              className="select-input"
+              style={{
+                fontSize: '0.72rem',
+                padding: '2px 8px',
+                fontWeight: 700,
+                color: (member.primaryStat || 'ATK') === 'DEF_HP' ? '#38bdf8' : (member.primaryStat || 'ATK') === 'DEF' ? '#34d399' : (member.primaryStat || 'ATK') === 'HP' ? '#f43f5e' : '#f87171',
+                background: 'rgba(15, 23, 42, 0.8)',
+                border: `1px solid ${(member.primaryStat || 'ATK') === 'DEF_HP' ? '#38bdf866' : (member.primaryStat || 'ATK') === 'DEF' ? '#34d39966' : (member.primaryStat || 'ATK') === 'HP' ? '#f43f5e66' : '#f8717166'}`,
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+              value={member.primaryStat || 'ATK'}
+              onChange={(e) =>
+                onUpdate({
+                  ...member,
+                  primaryStat: e.target.value as import('../../types').DamageStatScaling,
+                })
+              }
+            >
+              <option value="DEF">🛡️ Solo DEF (Wixwell, tanques)</option>
+              <option value="DEF_HP">🛡️❤️ Híbrido DEF + HP (Titus Plumanegra)</option>
+              <option value="ATK">⚔️ Solo ATK (Lady Mikage, Lydia, Anacoreta)</option>
+              <option value="HP">❤️ Solo HP (Campeones de Salud)</option>
+              <option value="ATK_DEF">⚔️🛡️ Híbrido ATK + DEF</option>
+              <option value="ATK_HP">⚔️❤️ Híbrido ATK + HP</option>
+            </select>
+          </div>
         </div>
 
-        <div className="stat-field">
-          <label className="stat-label">Total SPD</label>
-          <input
-            type="number"
-            className="stat-input"
-            value={member.totalSpeed}
-            onChange={(e) =>
-              onUpdate({ ...member, totalSpeed: Math.max(1, parseInt(e.target.value) || 0) })
-            }
-          />
+        {/* Fila 1: Velocidad, Defensa y Vida */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px', background: 'rgba(0, 0, 0, 0.25)', padding: '8px', borderRadius: '6px' }}>
+          <div className="stat-field">
+            <label className="stat-label">Base SPD</label>
+            <input
+              type="number"
+              className="stat-input"
+              value={member.baseSpeed}
+              onChange={(e) =>
+                onUpdate({ ...member, baseSpeed: Math.max(1, parseInt(e.target.value) || 0) })
+              }
+            />
+          </div>
+
+          <div className="stat-field">
+            <label className="stat-label">Total SPD</label>
+            <input
+              type="number"
+              className="stat-input"
+              value={member.totalSpeed}
+              onChange={(e) =>
+                onUpdate({ ...member, totalSpeed: Math.max(1, parseInt(e.target.value) || 0) })
+              }
+            />
+          </div>
+
+          <div className="stat-field">
+            <label className="stat-label">Base DEF</label>
+            <input
+              type="number"
+              className="stat-input"
+              value={member.baseDefense}
+              onChange={(e) =>
+                onUpdate({ ...member, baseDefense: Math.max(0, parseInt(e.target.value) || 0) })
+              }
+            />
+          </div>
+
+          <div className="stat-field">
+            <label className="stat-label">Total DEF</label>
+            <input
+              type="number"
+              className="stat-input"
+              value={member.totalDefense}
+              onChange={(e) =>
+                onUpdate({ ...member, totalDefense: Math.max(0, parseInt(e.target.value) || 0) })
+              }
+            />
+          </div>
+
+          <div className="stat-field">
+            <label className="stat-label">Base HP</label>
+            <input
+              type="number"
+              className="stat-input"
+              value={member.baseHP ?? member.championData?.stats.hp ?? ''}
+              placeholder="0"
+              onChange={(e) => {
+                const val = e.target.value;
+                onUpdate({ ...member, baseHP: val === '' ? undefined : Math.max(0, parseInt(val, 10) || 0) });
+              }}
+            />
+          </div>
+
+          <div className="stat-field">
+            <label className="stat-label">Total HP</label>
+            <input
+              type="number"
+              className="stat-input"
+              value={member.totalHP ?? ''}
+              placeholder="0"
+              onChange={(e) => {
+                const val = e.target.value;
+                onUpdate({ ...member, totalHP: val === '' ? undefined : Math.max(0, parseInt(val, 10) || 0) });
+              }}
+            />
+          </div>
         </div>
 
-        <div className="stat-field">
-          <label className="stat-label">Base DEF</label>
-          <input
-            type="number"
-            className="stat-input"
-            value={member.baseDefense}
-            onChange={(e) =>
-              onUpdate({ ...member, baseDefense: Math.max(0, parseInt(e.target.value) || 0) })
-            }
-          />
-        </div>
+        {/* Fila 2: Ataque, P.Critic (%) y D.Critic (%) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', background: 'rgba(0, 0, 0, 0.25)', padding: '8px', borderRadius: '6px' }}>
+          <div className="stat-field">
+            <label className="stat-label">Base ATK</label>
+            <input
+              type="number"
+              className="stat-input"
+              value={member.baseAttack ?? member.championData?.stats.atk ?? ''}
+              placeholder="0"
+              onChange={(e) => {
+                const val = e.target.value;
+                onUpdate({ ...member, baseAttack: val === '' ? undefined : Math.max(0, parseInt(val, 10) || 0) });
+              }}
+            />
+          </div>
 
-        <div className="stat-field">
-          <label className="stat-label">Total DEF</label>
-          <input
-            type="number"
-            className="stat-input"
-            value={member.totalDefense}
-            onChange={(e) =>
-              onUpdate({ ...member, totalDefense: Math.max(0, parseInt(e.target.value) || 0) })
-            }
-          />
+          <div className="stat-field">
+            <label className="stat-label">Total ATK</label>
+            <input
+              type="number"
+              className="stat-input"
+              value={member.totalAttack ?? ''}
+              placeholder="0"
+              onChange={(e) => {
+                const val = e.target.value;
+                onUpdate({ ...member, totalAttack: val === '' ? undefined : Math.max(0, parseInt(val, 10) || 0) });
+              }}
+            />
+          </div>
+
+          <div className="stat-field">
+            <label className="stat-label">💥 P.Critic (%)</label>
+            <input
+              type="number"
+              className="stat-input"
+              value={member.totalCritRate ?? ''}
+              placeholder="0"
+              onChange={(e) => {
+                const val = e.target.value;
+                onUpdate({ ...member, totalCritRate: val === '' ? undefined : Math.max(0, Math.min(100, parseInt(val, 10) || 0)) });
+              }}
+            />
+          </div>
+
+          <div className="stat-field">
+            <label className="stat-label">🎯 D.Critic (%)</label>
+            <input
+              type="number"
+              className="stat-input"
+              value={member.totalCritDamage ?? ''}
+              placeholder="0"
+              onChange={(e) => {
+                const val = e.target.value;
+                onUpdate({
+                  ...member,
+                  totalCritDamage: val === '' ? undefined : Math.max(0, parseInt(val, 10) || 0),
+                });
+              }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Previsión & Métricas Tácticas en Vivo */}
-      <div className="forecasting-panel">
-        <div className="forecasting-metric">
-          <span className="forecasting-label">⚡ True Speed</span>
-          <span className="forecasting-value" style={{ color: '#38bdf8' }}>
-            {member.trueSpeed.toFixed(2)}
-          </span>
-          <span className="forecasting-sub">
-            {spdAuraBonus > 0 ? `+${spdAuraBonus.toFixed(1)} Aura` : 'Sin Aura SPD'}
-          </span>
-        </div>
+      {/* Previsión & Métricas Tácticas de Daño en Vivo */}
+      {(() => {
+        const pStat = member.primaryStat || 'ATK';
+        const effDef = member.effectiveDefense || member.totalDefense || 3000;
+        const effAtk = member.effectiveAttack || member.totalAttack || 2500;
+        const effHp = member.effectiveHP || member.totalHP || 45000;
 
-        <div className="forecasting-metric">
-          <span className="forecasting-label">🛡️ DEF Efectiva</span>
-          <span className="forecasting-value" style={{ color: '#34d399' }}>
-            {member.effectiveDefense.toLocaleString()}
-          </span>
-          <span className="forecasting-sub">
-            {defAuraBonus > 0 ? `+${defAuraBonus} Aura` : 'Base + Eq'}
-          </span>
-        </div>
+        let primaryBaseVal = effAtk;
+        let buffedStatVal = effAtk * 1.5;
 
-        <div className="forecasting-metric">
-          <span className="forecasting-label">Mitigación CB</span>
-          <span className="forecasting-value" style={{ color: '#fbbf24' }}>
-            {member.damageMitigation.toFixed(1)}%
-          </span>
-          <span className="forecasting-sub">vs Clan Boss</span>
-        </div>
+        if (pStat === 'DEF') {
+          primaryBaseVal = effDef;
+          buffedStatVal = Math.round(effDef * 1.6);
+        } else if (pStat === 'HP') {
+          primaryBaseVal = Math.round(effHp * 0.22);
+          buffedStatVal = primaryBaseVal;
+        } else if (pStat === 'DEF_HP') {
+          // Híbrido Titus Plumanegra: DEF + HP
+          primaryBaseVal = Math.round(effDef * 0.75 + effHp * 0.12);
+          buffedStatVal = Math.round(effDef * 1.6 * 0.75 + effHp * 0.12);
+        } else if (pStat === 'ATK_DEF') {
+          primaryBaseVal = Math.round(effAtk * 0.6 + effDef * 0.5);
+          buffedStatVal = Math.round(effAtk * 1.5 * 0.6 + effDef * 1.6 * 0.5);
+        } else if (pStat === 'ATK_HP') {
+          primaryBaseVal = Math.round(effAtk * 0.6 + effHp * 0.12);
+          buffedStatVal = Math.round(effAtk * 1.5 * 0.6 + effHp * 0.12);
+        }
 
-        <div className="forecasting-metric">
-          <span className="forecasting-label">Factor Escudo</span>
-          <span className="forecasting-value" style={{ color: '#c084fc' }}>
-            x{member.shieldMultiplier.toFixed(2)}
-          </span>
-          <span className="forecasting-sub">EHP Escudo</span>
-        </div>
-      </div>
+        const cRate = member.effectiveCritRate ?? member.totalCritRate ?? 100;
+        const cDmg = member.effectiveCritDamage ?? member.totalCritDamage ?? 0;
+        const avgHitNormal = Math.round((primaryBaseVal * 3.6 * (1 + (cRate / 100) * (cDmg / 100)) * 0.38) * 2.0 + 39000);
+        const avgHitBuffed = Math.round((buffedStatVal * 3.6 * (1 + (Math.min(100, cRate + 30) / 100) * ((cDmg + 30) / 100)) * 0.38) * 2.0 + 39000);
+
+        return (
+          <div className="forecasting-panel">
+            <div className="forecasting-metric">
+              <span className="forecasting-label">⚡ True Speed</span>
+              <span className="forecasting-value" style={{ color: '#38bdf8' }}>
+                {member.trueSpeed.toFixed(2)}
+              </span>
+              <span className="forecasting-sub">
+                {spdAuraBonus > 0 ? `+${spdAuraBonus.toFixed(1)} Aura` : 'Sin Aura SPD'}
+              </span>
+            </div>
+
+            <div className="forecasting-metric">
+              <span className="forecasting-label">🛡️ DEF Efectiva</span>
+              <span className="forecasting-value" style={{ color: '#34d399' }}>
+                {effDef.toLocaleString()}
+              </span>
+              <span className="forecasting-sub">
+                Con Bufo 60%: {Math.round(effDef * 1.6).toLocaleString()}
+              </span>
+            </div>
+
+            <div className="forecasting-metric">
+              <span className="forecasting-label">❤️ HP / ⚔️ ATK</span>
+              <span className="forecasting-value" style={{ color: pStat.includes('HP') ? '#f43f5e' : '#f87171' }}>
+                {pStat.includes('HP') ? `${(effHp / 1000).toFixed(1)}k HP` : effAtk.toLocaleString()}
+              </span>
+              <span className="forecasting-sub">
+                {pStat === 'DEF_HP' ? 'Híbrido DEF+HP' : pStat.includes('HP') ? 'Escala por Vida' : `+50%: ${Math.round(effAtk * 1.5).toLocaleString()}`}
+              </span>
+            </div>
+
+            <div className="forecasting-metric">
+              <span className="forecasting-label">💥 Daño / Impacto</span>
+              <span className="forecasting-value" style={{ color: '#fbbf24' }}>
+                ~{avgHitBuffed.toLocaleString()}
+              </span>
+              <span className="forecasting-sub">
+                Base: ~{avgHitNormal.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Indicador de Sintonía y Cuadre de Velocidad vs Clan Boss */}
+      {(() => {
+        const currentBossSpd = bossSpeed || 190;
+        const ratioBase = member.trueSpeed / currentBossSpd;
+        const ratioWithBuff = (member.trueSpeed * 1.30) / currentBossSpd;
+
+        let syncStatusLabel = '⚠️ Descuadrado';
+        let syncBadgeColor = '#f87171';
+        let syncBadgeBg = 'rgba(239, 68, 68, 0.15)';
+
+        if (ratioWithBuff >= 1.70) {
+          syncStatusLabel = '🟢 2:1 Cuadrado (2 turnos por ataque del Boss)';
+          syncBadgeColor = '#4ade80';
+          syncBadgeBg = 'rgba(74, 222, 128, 0.15)';
+        } else if (ratioBase >= 1.00 && ratioBase <= 1.15) {
+          syncStatusLabel = '🔵 1:1 Cuadrado (1 turno por ataque del Boss)';
+          syncBadgeColor = '#60a5fa';
+          syncBadgeBg = 'rgba(96, 165, 250, 0.15)';
+        } else if (ratioWithBuff >= 1.30 && ratioWithBuff < 1.70) {
+          syncStatusLabel = '🟡 4:3 Cuadrado (4 turnos cada 3 del Boss)';
+          syncBadgeColor = '#facc15';
+          syncBadgeBg = 'rgba(250, 204, 21, 0.15)';
+        }
+
+        return (
+          <div
+            style={{
+              marginTop: '10px',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              background: 'rgba(15, 23, 42, 0.65)',
+              border: `1px solid ${syncBadgeColor}44`,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+              <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 700 }}>
+                ⚡ Indicador de Turno ({bossDifficulty || 'Boss'} • {currentBossSpd} SPD):
+              </span>
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  color: syncBadgeColor,
+                  backgroundColor: syncBadgeBg,
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  border: `1px solid ${syncBadgeColor}66`,
+                }}
+              >
+                {syncStatusLabel}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '14px', fontSize: '0.68rem', color: '#cbd5e1', flexWrap: 'wrap' }}>
+              <span>
+                Ratio Base: <strong>{ratioBase.toFixed(2)}x</strong>
+              </span>
+              <span>
+                Con +30% VEL: <strong style={{ color: ratioWithBuff >= 1.70 ? '#4ade80' : '#fbbf24' }}>{ratioWithBuff.toFixed(2)}x</strong>
+              </span>
+              {bossAffinity === 'Spirit' && (
+                <span style={{ color: '#f87171' }}>
+                  ⚠️ En Espíritu: -30% VEL si no hay Bloquear Debufos (cae a {(member.trueSpeed * 0.7).toFixed(1)} SPD)
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Collapsible Artifact & Accessories Sets Section (Punto 2: Oculto por defecto ya que Velocidad y DEF son directas) */}
       <div className="sets-toggle-container">

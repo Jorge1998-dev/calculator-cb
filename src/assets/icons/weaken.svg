@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="weakenBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#881337"/>
+    </linearGradient>
+    <radialGradient id="weakenBg" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#4c0519"/>
+      <stop offset="100%" stop-color="#140106"/>
+    </radialGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="url(#weakenBg)" stroke="url(#weakenBorder)" stroke-width="2.5"/>
+  <!-- Broken Dagger/Sword with vulnerability sparks -->
+  <path d="M24 14 L32 22 L28 26 L20 18 Z" fill="#fb7185"/>
+  <path d="M34 26 L48 40 L44 44 L30 30 Z" fill="#e11d48"/>
+  <!-- Shatter Lines -->
+  <path d="M26 24 L38 28 M30 20 L34 32" stroke="#ffe4e6" stroke-width="2" stroke-linecap="round"/>
+  <!-- Minus / Vulnerability marker -->
+  <circle cx="32" cy="48" r="8" fill="#881337" stroke="#fb7185" stroke-width="1.5"/>
+  <rect x="27" y="46.5" width="10" height="3" rx="1.5" fill="#ffe4e6"/>
+</svg>

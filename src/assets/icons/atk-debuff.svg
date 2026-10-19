@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="atkDebuffBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#7f1d1d"/>
+    </linearGradient>
+    <radialGradient id="atkDebuffBg" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#450a0a"/>
+      <stop offset="100%" stop-color="#110202"/>
+    </radialGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="url(#atkDebuffBg)" stroke="url(#atkDebuffBorder)" stroke-width="2.5"/>
+  <!-- Crossed Swords pointing down / broken -->
+  <path d="M18 16 L46 44 M46 16 L18 44" stroke="#fca5a5" stroke-width="4" stroke-linecap="round"/>
+  <!-- Hilt bars -->
+  <path d="M15 22 L24 13 M49 22 L40 13" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+  <!-- Red Minus banner -->
+  <rect x="20" y="48" width="24" height="6" rx="3" fill="#ef4444" stroke="#7f1d1d" stroke-width="1"/>
+</svg>

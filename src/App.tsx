@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useDeferredValue } from 'react';
 import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import { raidDarkTheme } from './styles/muiTheme';
 import './styles/global.css';
@@ -52,6 +52,15 @@ const INITIAL_TEAM: TeamMemberConfig[] = DEFAULT_SLOT_COLORS.map((cfg, idx) => (
   totalSpeed: 190 + idx * 5,
   baseDefense: 1000,
   totalDefense: 2500,
+  baseHP: 18000,
+  totalHP: 45000,
+  baseAttack: 1000,
+  totalAttack: 2500,
+  baseCritRate: 15,
+  totalCritRate: 100,
+  baseCritDamage: 50,
+  totalCritDamage: 200,
+  primaryStat: (idx === 4 ? 'DEF_HP' : idx === 3 ? 'DEF' : 'ATK') as import('./types').DamageStatScaling,
   auraType: idx === 0 ? 'spd' : 'none',
   auraPercent: idx === 0 ? 19 : 0,
   hasNativeAura: idx === 0,
@@ -142,8 +151,23 @@ export function App() {
   const handleEquipChampionInSlot = (champ: ChampionData, slotIdx: number) => {
     const baseSpd = champ.stats.spd || 100;
     const baseDef = champ.stats.def || 1000;
-    const detected = detectChampionAura(champ);
+    const baseHp = champ.stats.hp || 18000;
+    const baseAtk = champ.stats.atk || 1000;
+    const baseCrate = champ.stats.crate || 15;
+    const baseCdmg = champ.stats.cmdg || 50;
+    const isTitus = champ.name.toLowerCase().includes('titus') || (champ.spanishName || '').toLowerCase().includes('titus');
     const newSkills = parseChampionSkills(champ);
+    const hasDefSkill = newSkills.some((s) => s.damageStat === 'DEF' || s.damageStat === 'DEF_HP');
+    const hasHpSkill = newSkills.some((s) => s.damageStat === 'HP' || s.damageStat === 'DEF_HP');
+    let primaryStat: import('./types').DamageStatScaling = 'ATK';
+    if (isTitus || (hasDefSkill && hasHpSkill)) {
+      primaryStat = 'DEF_HP';
+    } else if (hasDefSkill || champ.class.role === 'Defense') {
+      primaryStat = 'DEF';
+    } else if (hasHpSkill || champ.class.role === 'Health') {
+      primaryStat = 'HP';
+    }
+    const detected = detectChampionAura(champ);
 
     setTeamMembers((prev) =>
       prev.map((m) => {
@@ -156,6 +180,15 @@ export function App() {
           totalSpeed: Math.max(m.totalSpeed, baseSpd),
           baseDefense: baseDef,
           totalDefense: Math.max(m.totalDefense, baseDef),
+          baseHP: baseHp,
+          totalHP: m.totalHP && m.totalHP > baseHp ? m.totalHP : Math.round(baseHp * 2.3),
+          baseAttack: baseAtk,
+          totalAttack: m.totalAttack && m.totalAttack > baseAtk ? m.totalAttack : Math.round(baseAtk * 2.5),
+          baseCritRate: baseCrate,
+          totalCritRate: m.totalCritRate ? m.totalCritRate : 100,
+          baseCritDamage: baseCdmg,
+          totalCritDamage: m.totalCritDamage && m.totalCritDamage > baseCdmg ? m.totalCritDamage : 200,
+          primaryStat,
           hasNativeAura: detected.hasAura,
           nativeAuraDesc: detected.description,
           auraType: m.isLeader ? detected.type : m.auraType,
@@ -184,6 +217,9 @@ export function App() {
 
       const spdAuraVal = auraTypeToUse === 'spd' ? auraPercentToUse : 0;
       const defAuraVal = auraTypeToUse === 'def' ? auraPercentToUse : 0;
+      const atkAuraVal = auraTypeToUse === 'atk' ? auraPercentToUse : 0;
+      const hpAuraVal = auraTypeToUse === 'hp' ? auraPercentToUse : 0;
+      const crateAuraVal = auraTypeToUse === 'crate' ? auraPercentToUse : 0;
 
       const sets = [m.set1, m.set2, m.set3];
       const trueSpd = calculateTrueSpeed(
@@ -201,6 +237,10 @@ export function App() {
         m.totalDefense,
         defAuraVal
       );
+      const effAtk = Math.round((m.totalAttack ?? 2000) + (atkAuraVal / 100) * (m.baseAttack || 1000));
+      const effHP = Math.round((m.totalHP ?? 40000) + (hpAuraVal / 100) * (m.baseHP || 18000));
+      const effCrate = Math.min(100, (m.totalCritRate ?? 100) + crateAuraVal);
+      const effCdmg = m.totalCritDamage ?? 0;
       const mitigation = calculateDamageMitigation(effDef);
       const shieldMult = calculateShieldMultiplier(effDef);
 
@@ -208,6 +248,10 @@ export function App() {
         ...m,
         trueSpeed: trueSpd,
         effectiveDefense: effDef,
+        effectiveAttack: effAtk,
+        effectiveHP: effHP,
+        effectiveCritRate: effCrate,
+        effectiveCritDamage: effCdmg,
         damageMitigation: mitigation,
         shieldMultiplier: shieldMult,
       };
@@ -218,6 +262,9 @@ export function App() {
   const simulationResult = useMemo(() => {
     return runClanBossSimulation(teamWithLiveSpeeds, difficulty, affinity, maxBossTurns);
   }, [teamWithLiveSpeeds, difficulty, affinity, maxBossTurns]);
+
+  // Use deferred value to guarantee typing in inputs is 100% fluid and non-blocking
+  const deferredSimulation = useDeferredValue(simulationResult);
 
   // Presets loader
   const handleConfirmApplyPreset = (presetName: string) => {
@@ -232,7 +279,7 @@ export function App() {
       ];
       const speeds = [248, 245, 242, 238, 215];
       setDifficulty('Brutal');
-      setMaxBossTurns(137); // Como en la captura de 137 rondas del Boss
+      setMaxBossTurns(50); // 50 rondas canónicas del Boss
       setTeamMembers((prev) =>
         prev.map((m, idx) => {
           const targetName = champNames[idx];
@@ -251,6 +298,17 @@ export function App() {
             if (sk.id === 'A1') return { ...sk, priority: 1 };
             return sk;
           });
+          const baseHp = found?.stats.hp || (idx === 0 ? 21645 : idx === 3 ? 18500 : idx === 4 ? 18495 : 19155);
+          const baseAtk = found?.stats.atk || (idx === 0 ? 1200 : idx === 3 ? 850 : idx === 4 ? 837 : 1046);
+          const baseCrate = found?.stats.crate || 15;
+          const baseCdmg = found?.stats.cmdg || (idx === 3 || idx === 4 ? 63 : 50);
+          const primaryStat = (idx === 4 ? 'DEF_HP' : idx === 3 ? 'DEF' : 'ATK') as import('./types').DamageStatScaling;
+
+          const totalHp = idx === 3 ? 52000 : idx === 4 ? 48000 : idx === 0 ? 44000 : idx === 1 ? 48000 : 50000;
+          const totalAtk = idx === 0 ? 4200 : idx === 1 ? 3100 : idx === 2 ? 2200 : idx === 3 ? 1600 : 1800;
+          const totalCrate = idx === 3 ? 85 : idx === 2 ? 75 : 100;
+          const totalCdmg = idx === 4 ? 240 : idx === 0 ? 220 : idx === 1 ? 200 : idx === 3 ? 180 : 150;
+
           return {
             ...m,
             championName: found?.spanishName || targetName,
@@ -259,6 +317,15 @@ export function App() {
             totalSpeed: speeds[idx],
             baseDefense: baseDef,
             totalDefense: idx === 3 ? 4600 : idx === 4 ? 3800 : 3200,
+            baseHP: baseHp,
+            totalHP: totalHp,
+            baseAttack: baseAtk,
+            totalAttack: totalAtk,
+            baseCritRate: baseCrate,
+            totalCritRate: totalCrate,
+            baseCritDamage: baseCdmg,
+            totalCritDamage: totalCdmg,
+            primaryStat,
             isLeader: idx === 3, // Wixwell Líder
             auraType: idx === 3 ? 'def' : 'none', // Aura de Defensa como en la captura
             auraPercent: idx === 3 ? 30 : 0,
@@ -411,9 +478,8 @@ export function App() {
                   value={maxBossTurns}
                   onChange={(e) => setMaxBossTurns(Number(e.target.value))}
                 >
-                  <option value={50}>50 Rondas</option>
+                  <option value={50}>50 Rondas (Estándar Canónico)</option>
                   <option value={100}>100 Rondas</option>
-                  <option value={137}>137 Rondas (1,500T)</option>
                   <option value={150}>150 Rondas (Máx)</option>
                 </select>
               </div>
@@ -474,20 +540,23 @@ export function App() {
                       onSetAsLeader={handleSetAsLeader}
                       leaderAuraType={leaderAuraType}
                       leaderAuraPercent={leaderAuraPercent}
+                      bossSpeed={bossSpeed}
+                      bossDifficulty={difficulty}
+                      bossAffinity={affinity}
                     />
                   ))}
                 </section>
 
                 {/* Right Panel: Combat Timeline Matrix */}
                 <section>
-                  <TimelineView simulation={simulationResult} />
+                  <TimelineView simulation={deferredSimulation} />
                 </section>
               </main>
             )}
 
             {currentView === 'timeline' && (
               <Box sx={{ p: 2 }}>
-                <TimelineView simulation={simulationResult} />
+                <TimelineView simulation={deferredSimulation} />
               </Box>
             )}
 

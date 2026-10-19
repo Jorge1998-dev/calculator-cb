@@ -289,33 +289,33 @@ export function runClanBossSimulation(
     if (actingActor) {
       actingActor.hasExtraTurn = false;
     } else {
-      // 2. Tick loop until someone reaches >= 100% TM
-      do {
+      // 2. Tick loop until someone reaches >= 100% TM (Raid Canonical Tick Engine)
+      while (allActors.every((a) => a.turnMeter < 100)) {
         for (const actor of allActors) {
           const speedMod = getSpeedModifier(actor.effects);
-            const memberConfig = teamMembers[actor.slotIndex];
-            const spdAuraToUse = memberConfig?.overrideAura
-              ? (memberConfig.auraType === 'spd' ? memberConfig.auraPercent : memberConfig.customAuraPercent)
-              : activeSpdAura;
+          const memberConfig = teamMembers[actor.slotIndex];
+          const spdAuraToUse = memberConfig?.overrideAura
+            ? (memberConfig.auraType === 'spd' ? memberConfig.auraPercent : memberConfig.customAuraPercent)
+            : activeSpdAura;
 
-            const currentTrueSpeed = actor.isBoss
-              ? actor.baseSpeed * (1 + speedMod)
-              : calculateTrueSpeed(
-                  actor.baseSpeed,
-                  actor.totalSpeed,
-                  [memberConfig?.set1 || 'none', memberConfig?.set2 || 'none', memberConfig?.set3 || 'none'],
-                  memberConfig?.hasLoreOfSteel || false,
-                  spdAuraToUse,
-                  speedMod,
-                  0,
-                  memberConfig?.equippedSets
-                );
+          const currentTrueSpeed = actor.isBoss
+            ? actor.baseSpeed * (1 + speedMod)
+            : calculateTrueSpeed(
+                actor.baseSpeed,
+                actor.totalSpeed,
+                [memberConfig?.set1 || 'none', memberConfig?.set2 || 'none', memberConfig?.set3 || 'none'],
+                memberConfig?.hasLoreOfSteel || false,
+                spdAuraToUse,
+                speedMod,
+                0,
+                memberConfig?.equippedSets
+              );
 
           // Standard Raid tick rate: 7% per 100 speed per tick (0.07 * TrueSpeed)
           const delta = (currentTrueSpeed * 0.07);
           actor.turnMeter += delta;
         }
-      } while (allActors.every((a) => a.turnMeter < 100));
+      }
 
       // 3. Find actor with highest Turn Meter. In case of tie, lower slotIndex breaks tie.
       const highestTm = Math.max(...allActors.map((a) => a.turnMeter));
@@ -490,13 +490,16 @@ export function runClanBossSimulation(
 
       const activeBossDebuffs = bossActor.effects.filter((e) => e.type === 'debuff');
       const existing = bossActor.effects.find((e) => e.name === cleanName && e.type === 'debuff');
-      if (existing) {
-        existing.duration = Math.max(existing.duration, duration);
+      if (existing && cleanName !== 'poison') {
+        existing.duration = Math.min(3, Math.max(existing.duration, duration));
+        if (amount !== undefined) {
+          existing.amount = Math.max(existing.amount || 0, amount);
+        }
       } else if (activeBossDebuffs.length < 10) {
         bossActor.effects.push({
           name: cleanName,
           type: 'debuff',
-          duration,
+          duration: Math.min(3, duration),
           amount,
           reduceDurationAt: 'turn-end',
         });
@@ -510,24 +513,43 @@ export function runClanBossSimulation(
       duration: number,
       amount?: number
     ) => {
+      // Regla canónica de Raid: Intercept (Intercipio) NO tiene duración de turnos, opera exclusivamente por CARGAS (stacks)
+      if (buffName === 'intercept') {
+        const existing = actor.effects.find((e) => e.name === 'intercept');
+        const finalStacks = Math.min((existing?.amount || 0) + (amount || 1), 3);
+        if (existing) {
+          existing.amount = finalStacks;
+          existing.duration = finalStacks;
+        } else {
+          actor.effects.push({
+            name: 'intercept',
+            type: 'buff',
+            duration: finalStacks,
+            amount: finalStacks,
+            reduceDurationAt: 'turn-end',
+            isAddedThisTurn: false,
+            appliedAtBossRound: bossTurnCount,
+          });
+        }
+        return;
+      }
+
       const isCaster = actor === actingActor;
       const existing = actor.effects.find((e) => e.name === buffName && e.type === 'buff');
       if (existing) {
         // En Raid: Shadow Legends los bufos son estrictamente únicos por tipo.
-        // Si ya está activo, se refresca/extiende la duración y se actualizan cargas de Intercept.
-        existing.duration = Math.max(existing.duration, duration);
+        // Si ya está activo, se refresca la duración (máximo canónico en juego real: 6 turnos)
+        existing.duration = Math.min(6, Math.max(existing.duration, duration));
         existing.appliedAtBossRound = bossTurnCount;
         if (isCaster) existing.isAddedThisTurn = true;
-        if (buffName === 'intercept' && amount) {
-          existing.amount = Math.min((existing.amount || 1) + amount, 3);
-        } else if (amount !== undefined) {
+        if (amount !== undefined) {
           existing.amount = Math.max(existing.amount || 0, amount);
         }
       } else {
         actor.effects.push({
           name: buffName,
           type: 'buff',
-          duration,
+          duration: Math.min(6, duration),
           amount,
           reduceDurationAt: 'turn-end',
           isAddedThisTurn: isCaster,
@@ -541,15 +563,19 @@ export function runClanBossSimulation(
       const hasBlockDebuffs = champ.effects.some((e) => e.name === 'block-debuffs');
       if (hasBlockDebuffs) return 'blocked';
 
-      const interceptIdx = champ.effects.findIndex((e) => e.name === 'intercept');
-      if (interceptIdx !== -1) {
-        const interceptEff = champ.effects[interceptIdx];
-        if (interceptEff.amount && interceptEff.amount > 1) {
-          interceptEff.amount -= 1;
-        } else {
-          champ.effects.splice(interceptIdx, 1);
+      // En Raid: Shadow Legends, Intercept (Intercipio) intercepta EXCLUSIVAMENTE debufos de control (CC: Stun, etc.)
+      const isCC = ['stun', 'aturdir', 'freeze', 'congelar', 'sleep', 'dormir', 'provoke', 'fear', 'petrification', 'sheep'].includes(debuffName.toLowerCase());
+      if (isCC) {
+        const interceptIdx = champ.effects.findIndex((e) => e.name === 'intercept');
+        if (interceptIdx !== -1) {
+          const interceptEff = champ.effects[interceptIdx];
+          if (interceptEff.amount && interceptEff.amount > 1) {
+            interceptEff.amount -= 1;
+          } else {
+            champ.effects.splice(interceptIdx, 1);
+          }
+          return 'intercepted';
         }
-        return 'intercepted';
       }
 
       const existingDebuff = champ.effects.find((e) => e.name === debuffName && e.type === 'debuff');
@@ -569,7 +595,6 @@ export function runClanBossSimulation(
 
     // 8. Execute skill mechanics
     let turnDamage = 0;
-    let didExtendBuffsThisTurn = false;
     if (actingActor.isBoss) {
       // --- MECÁNICAS REALES DEL JEFE DE CLAN ---
       if (currentPhase === 'AOE1') {
@@ -660,7 +685,6 @@ export function runClanBossSimulation(
       const skillNameLower = (chosenSkill.name + ' ' + (matchedSkillData?.description || '')).toLowerCase();
 
       let isHandledSpecifically = false;
-      didExtendBuffsThisTurn = false;
 
       // --- WIXWELL: MOTOR DE ESCUDO CRECIENTE E INTERCEPTACIÓN ---
       if (isWixwell) {
@@ -673,27 +697,22 @@ export function runClanBossSimulation(
           });
         } else if (chosenSkill.id === 'A2' || skillNameLower.includes('tempest') || skillNameLower.includes('conocimiento')) {
           isHandledSpecifically = true;
-          didExtendBuffsThisTurn = true;
           addDebuffToBoss('def-debuff', 2, 0.6);
-          // Wixwell A2: Extiende la duración de los bufos del resto de aliados en 1 turno y amplifica el escudo
+          // Wixwell A2: Extiende la duración de los bufos de TODOS los aliados en 1 turno (tope canónico en juego real: 6 turnos)
           actors.forEach((a) => {
-            if (a !== actingActor) {
-              a.effects.forEach((e) => {
-                if (e.type === 'buff') {
-                  e.duration += 1;
-                  if (e.name === 'shield') {
-                    e.amount = Math.min((e.amount || 0.35) * 1.25, 5.0);
-                  }
-                }
-              });
-            } else {
-              a.effects.forEach((e) => {
+            a.effects.forEach((e) => {
+              if (e.type === 'buff' && e.name !== 'intercept') {
+                e.duration = Math.min(6, e.duration + 1);
                 if (e.name === 'shield') {
                   e.amount = Math.min((e.amount || 0.35) * 1.25, 5.0);
                 }
-              });
-            }
+              }
+            });
           });
+        } else if (chosenSkill.id === 'A1' || skillNameLower.includes('deadbolt') || skillNameLower.includes('cerrojo')) {
+          isHandledSpecifically = true;
+          // Wixwell A1: Ataque con 50% [Disminuir ATK] por 2 turnos
+          addDebuffToBoss('atk-debuff', 2, 0.5);
         }
       }
 
@@ -701,17 +720,16 @@ export function runClanBossSimulation(
       if (isAnchorite) {
         if (chosenSkill.id === 'A2' || skillNameLower.includes('prayer') || skillNameLower.includes('proeza')) {
           isHandledSpecifically = true;
-          didExtendBuffsThisTurn = true;
           actors.forEach((a) => {
             // Remueve 1 debufo aleatorio de todos los aliados
             const debuffIdx = a.effects.findIndex((e) => e.type === 'debuff');
             if (debuffIdx !== -1) a.effects.splice(debuffIdx, 1);
-            // Extiende la duración de todos los bufos del resto de aliados en 1 turno
-            if (a !== actingActor) {
-              a.effects.forEach((e) => {
-                if (e.type === 'buff') e.duration += 1;
-              });
-            }
+            // Extiende la duración de todos los bufos de TODOS los aliados en 1 turno (máx 6 turnos)
+            a.effects.forEach((e) => {
+              if (e.type === 'buff' && e.name !== 'intercept') {
+                e.duration = Math.min(6, e.duration + 1);
+              }
+            });
           });
         } else if (chosenSkill.id === 'A3' || skillNameLower.includes('trust') || skillNameLower.includes('confianza') || skillNameLower.includes('sacred') || skillNameLower.includes('skill 3')) {
           isHandledSpecifically = true;
@@ -725,14 +743,13 @@ export function runClanBossSimulation(
       if (isMikage) {
         if (chosenSkill.id === 'A2' || skillNameLower.includes('silk') || skillNameLower.includes('seda') || skillNameLower.includes('trampa') || skillNameLower.includes('skill 2')) {
           isHandledSpecifically = true;
-          didExtendBuffsThisTurn = true;
-          // 1. Extiende la duración de los bufos del resto de aliados en 1 turno (Mikage queda con 2 pero extiende a 3 al resto)
+          // 1. Extiende la duración de los bufos de TODOS los aliados en 1 turno (máx 6 turnos)
           actors.forEach((a) => {
-            if (a !== actingActor) {
-              a.effects.forEach((e) => {
-                if (e.type === 'buff') e.duration += 1;
-              });
-            }
+            a.effects.forEach((e) => {
+              if (e.type === 'buff' && e.name !== 'intercept') {
+                e.duration = Math.min(6, e.duration + 1);
+              }
+            });
           });
           // 2. Reduce la duración de desbufos en aliados en 1 turno
           actors.forEach((a) => {
@@ -740,9 +757,11 @@ export function runClanBossSimulation(
               .map((e) => (e.type === 'debuff' ? { ...e, duration: e.duration - 1 } : e))
               .filter((e) => e.duration > 0);
           });
-          // 3. Extiende la duración de TODOS los debufos en el Clan Boss en 1 turno (Mecánica clave de Silkensnare)
+          // 3. Extiende la duración de TODOS los debufos en el Clan Boss en 1 turno (máx canónico de 3 turnos)
           bossActor.effects.forEach((e) => {
-            if (e.type === 'debuff') e.duration += 1;
+            if (e.type === 'debuff') {
+              e.duration = Math.min(3, e.duration + 1);
+            }
           });
         } else if (chosenSkill.id === 'A3' || skillNameLower.includes('duality') || skillNameLower.includes('danza') || skillNameLower.includes('dualidad') || skillNameLower.includes('skill 3')) {
           isHandledSpecifically = true;
@@ -773,7 +792,6 @@ export function runClanBossSimulation(
           // Nulificación (A3): Ataca a 1 enemigo 2 veces.
           // 1er golpe: Aplica Sensibilidad al Veneno 25% por 2 turnos al Clan Boss.
           // 2do golpe: Aplica Bloquear Bufos por 2 turnos al Clan Boss.
-          // (Nota: El Clan Boss es inmune a Bloquear Habilidades Activas, por lo que no se coloca).
           addDebuffToBoss('poison-sensitivity', 2, 0.25);
           addDebuffToBoss('block-buffs', 2);
         } else if (
@@ -782,12 +800,28 @@ export function runClanBossSimulation(
           skillNameLower.includes('opresion')
         ) {
           isHandledSpecifically = true;
-          // Opresión (A1): Ataca a 1 enemigo. Aumenta la duración de Sensibilidad al Veneno en el Boss en +1 turno
-          bossActor.effects.forEach((e) => {
-            if (e.name === 'poison-sensitivity' && e.type === 'debuff') {
-              e.duration += 1;
-            }
-          });
+          // Opresión (A1): Ataca a 1 enemigo. Aplica o aumenta la duración de Sensibilidad al Veneno en el Boss en +1 turno
+          const existingPoisonSense = bossActor.effects.find(
+            (e) => e.name === 'poison-sensitivity' && e.type === 'debuff'
+          );
+          if (existingPoisonSense) {
+            existingPoisonSense.duration = Math.min(3, existingPoisonSense.duration + 1);
+          } else {
+            addDebuffToBoss('poison-sensitivity', 2, 0.25);
+          }
+        }
+      }
+
+      // --- TITUS PLUMANEGRA: ESCALADO DE DEFENSA, DISMINUIR ATK Y DEFENSA ---
+      if (isTitus) {
+        if (chosenSkill.id === 'A1' || skillNameLower.includes('strike') || skillNameLower.includes('golpe')) {
+          isHandledSpecifically = true;
+          // Titus A1: Ataca con 50% [Disminuir ATK] por 2 turnos
+          addDebuffToBoss('atk-debuff', 2, 0.5);
+        } else if (chosenSkill.id === 'A2' || skillNameLower.includes('skill 2') || skillNameLower.includes('habilidad 2')) {
+          isHandledSpecifically = true;
+          // Titus A2: Ataca a todos los enemigos. Aplica 60% [Disminuir DEF] por 2 turnos
+          addDebuffToBoss('def-debuff', 2, 0.6);
         }
       }
 
@@ -821,7 +855,11 @@ export function runClanBossSimulation(
             } else if (b.includes('crit')) {
               targetActors.forEach((a) => applyBuffToActor(a, 'crit-buff', turns, 0.3));
             } else if (b === 'extend_buff') {
-              actors.forEach((a) => a.effects.forEach((e) => { if (e.type === 'buff') e.duration += 1; }));
+              actors.forEach((a) => a.effects.forEach((e) => {
+                if (e.type === 'buff' && e.name !== 'intercept') {
+                  e.duration = Math.min(6, e.duration + 1);
+                }
+              }));
             }
           } else if (eff.id === 'add_debuff' && eff.debuff) {
             const d = eff.debuff.toLowerCase();
@@ -842,31 +880,91 @@ export function runClanBossSimulation(
         }
       }
 
-      // --- CÁLCULO DE DAÑO DEL TURNO (CON ESCALADO DE TITUS POR ESCUDOS) ---
+      // --- CÁLCULO DE DAÑO DEL TURNO (BASADO EN STATS REALES: ATK, DEF, HP, P.CRITIC Y D.CRITIC) ---
       const hasDefDebuff = bossActor.effects.some((e) => e.name === 'def-debuff');
       const hasWeaken = bossActor.effects.some((e) => e.name === 'weaken');
       const defMultiplier = hasDefDebuff ? 1.6 : 1.0;
       const weakenMultiplier = hasWeaken ? 1.25 : 1.0;
       const bossDebuffMultiplier = defMultiplier * weakenMultiplier;
 
+      // 1. Determinar stat primario y su valor efectivo con bufos de combate (DEF, HP, ATK o Híbrido)
+      const skillScaling = chosenSkill.damageStat;
+      const primaryStat = skillScaling || champConfig?.primaryStat || (isTitus ? 'DEF_HP' : isWixwell ? 'DEF' : 'ATK');
+      const hasDefBuff = actingActor.effects.some((e) => e.name === 'def-buff');
+      const hasAtkBuff = actingActor.effects.some((e) => e.name === 'atk-buff');
+
+      const baseDefVal = champConfig?.effectiveDefense || champConfig?.totalDefense || 3000;
+      const buffedDef = baseDefVal * (hasDefBuff ? 1.6 : 1.0);
+
+      const baseAtkVal = champConfig?.effectiveAttack || champConfig?.totalAttack || 2500;
+      const buffedAtk = baseAtkVal * (hasAtkBuff ? 1.5 : 1.0);
+
+      const effHp = champConfig?.effectiveHP || champConfig?.totalHP || 45000;
+
+      let buffedStatVal = 2500;
+      if (primaryStat === 'DEF') {
+        buffedStatVal = buffedDef;
+      } else if (primaryStat === 'HP') {
+        // En Raid, habilidades basadas en HP usan ~0.20-0.25 del HP Máximo como base de daño
+        buffedStatVal = effHp * 0.22;
+      } else if (primaryStat === 'DEF_HP') {
+        // HÍBRIDO DEF + HP (Titus Plumanegra y tanques híbridos)
+        buffedStatVal = (buffedDef * 0.75) + (effHp * 0.12);
+      } else if (primaryStat === 'ATK_DEF') {
+        buffedStatVal = (buffedAtk * 0.6) + (buffedDef * 0.5);
+      } else if (primaryStat === 'ATK_HP') {
+        buffedStatVal = (buffedAtk * 0.6) + (effHp * 0.12);
+      } else {
+        buffedStatVal = buffedAtk;
+      }
+
+      // 2. Multiplicador de Crítico (P.Critic y D.Critic)
+      const hasCritBuff = actingActor.effects.some((e) => e.name === 'crit-buff');
+      const rawCrate = (champConfig?.effectiveCritRate ?? champConfig?.totalCritRate ?? 100) + (hasCritBuff ? 30 : 0);
+      const effectiveCrate = Math.min(100, Math.max(0, rawCrate));
+      const rawCdmg = (champConfig?.effectiveCritDamage ?? champConfig?.totalCritDamage ?? 0) + (hasCritBuff ? 30 : 0);
+      const critMultiplier = 1 + (effectiveCrate / 100) * (rawCdmg / 100);
+
+      // 3. Multiplicador de habilidad (A1: 3.5x, A2: 4.0x, A3: 4.2x / apoyo)
+      let skillMultiplier = 3.6;
+      if (chosenSkill.id === 'A1') skillMultiplier = 3.5;
+      else if (chosenSkill.id === 'A2') skillMultiplier = 4.0;
+      else if (chosenSkill.id === 'A3') skillMultiplier = 4.2;
+
+      // Mitigación estándar de armadura del Clan Boss
+      const cbMitigationFactor = 0.38;
+
+      // Bonus por Maestría Maestro de la Guerra (Warmaster) ~65k proc en 60% de golpes
+      const warmasterAvg = 39000;
+
+      // Cálculo del golpe estándar basado en estadísticas
+      const standardHitDamage = Math.round(
+        (buffedStatVal * skillMultiplier * critMultiplier * cbMitigationFactor) * bossDebuffMultiplier + warmasterAvg
+      );
+
       if (isTitus) {
         if (chosenSkill.id === 'A3') {
-          // A3 (Confidente de Androc) es una habilidad de apoyo y bufos que no inflige daño directo
-          turnDamage = 0;
+          turnDamage = 0; // Habilidad de apoyo (Confidente de Androc)
         } else if (chosenSkill.id === 'A2') {
-          // A2 (Estudiante de la Guerra) es el golpe masivo que escala con el valor total del escudo y la pasiva "Por el Señor y la Tierra"
-          // Calibrado con telemetría empírica de Jorge (Turno 20: 1.325M, Turno 46: 7.677M)
+          // A2 (Estudiante de la Guerra): Escala con DEF, D.Critic y el tamaño total acumulado del Escudo
           const hasShield = actingActor.effects.some((e) => e.name === 'shield');
-          const shieldScaleFactor = hasShield
-            ? Math.min(Math.round(Math.pow(Math.max(bossTurnCount, 0), 2.2) * 829), 3800000)
+          const shieldBonus = hasShield
+            ? Math.min(Math.round(Math.pow(Math.max(bossTurnCount, 0), 2.12) * 850), 3800000)
             : 40000;
-          turnDamage = Math.round((60000 + shieldScaleFactor) * bossDebuffMultiplier);
+          const titusCritMult = 1 + (rawCdmg / 100);
+          const baseTitusHit = (buffedStatVal * 4.2 * titusCritMult * cbMitigationFactor);
+          turnDamage = Math.round((baseTitusHit + shieldBonus + warmasterAvg) * bossDebuffMultiplier);
         } else {
-          // A1 (Espada de Cuervo) es un ataque normal individual basado en DEF
-          turnDamage = Math.round((45000 + (bossTurnCount * 800)) * bossDebuffMultiplier);
+          turnDamage = standardHitDamage;
         }
+      } else if (isMikage && chosenSkill.id === 'A3') {
+        // Lady Mikage A3 (Decreto Imperial): Ataque conjunto de todos los aliados
+        turnDamage = Math.round(standardHitDamage * 2.8);
+      } else if (chosenSkill.id === 'A3' && (isAnchorite || isWixwell)) {
+        // Habilidades puras de bufos/curación sin daño directo
+        turnDamage = 0;
       } else {
-        turnDamage = Math.round((35000 + (bossTurnCount * 1200)) * bossDebuffMultiplier);
+        turnDamage = standardHitDamage;
       }
     }
 
@@ -875,24 +973,7 @@ export function runClanBossSimulation(
       chosenSkill.current_cooldown = chosenSkill.cooldown;
     }
 
-    // 7. Reduce effect duration at turn-end for acting actor
-    actingActor.effects = actingActor.effects
-      .map((e) => {
-        if (e.isAddedThisTurn) {
-          return { ...e, isAddedThisTurn: false };
-        }
-        // Bufos colocados en la misma ronda del Boss antes de su impacto no decaen en la preparación
-        if (e.type === 'buff' && e.appliedAtBossRound === bossTurnCount) {
-          return e;
-        }
-        if (didExtendBuffsThisTurn && e.type === 'buff') {
-          return e;
-        }
-        return e.reduceDurationAt === 'turn-end' ? { ...e, duration: e.duration - 1 } : e;
-      })
-      .filter((e) => e.duration > 0);
-
-    // Snapshot final de efectos (refleja el estado resultante tras consumirse la acción del actor)
+    // 7. Snapshot de efectos y debufos ACTIVOS durante esta acción (capturado con el estado real durante el turno)
     const effectsSnapshot = allActors.flatMap((a) =>
       a.effects.map((e) => ({
         targetName: a.name,
@@ -911,6 +992,19 @@ export function runClanBossSimulation(
         duration: e.duration,
         amount: e.amount,
       }));
+
+    // 8. Reduce effect duration at turn-end for acting actor (Canonical Raid decay tras concluir la acción)
+    actingActor.effects = actingActor.effects
+      .map((e) => {
+        if (e.isAddedThisTurn) {
+          return { ...e, isAddedThisTurn: false };
+        }
+        if (e.name === 'intercept') {
+          return e; // Las cargas de Intercept NO decaen por turnos
+        }
+        return e.reduceDurationAt === 'turn-end' ? { ...e, duration: e.duration - 1 } : e;
+      })
+      .filter((e) => e.duration > 0);
 
     turns.push({
       turnIndex: turns.length + 1,
@@ -953,6 +1047,52 @@ export function runClanBossSimulation(
   const hasMikage = champNames.some((n) => n.includes('mikage'));
   const isInfiniteShieldSetup = hasWixwell && (hasAnchorite || hasMikage);
 
+  // Calcular métricas matemáticas de sintonía ("Cuadre") de cada campeón respecto a la velocidad del Boss
+  const championSyncMetrics = teamMembers.map((m) => {
+    const actor = actors.find((a) => a.slotIndex === m.slotIndex);
+    const champTurns = turns.filter((t) => !t.isBoss && t.actorSlot === m.slotIndex);
+    const turnsTaken = champTurns.length;
+    const turnsPerBossTurn = bossTurnCount > 0 ? turnsTaken / bossTurnCount : 0;
+    const trueSpd = actor?.trueSpeed || m.trueSpeed;
+    const ratioVsBoss = bossBaseSpeed > 0 ? trueSpd / bossBaseSpeed : 0;
+    const effectiveRatioWithSpdBuff = (trueSpd * 1.3) / bossBaseSpeed;
+
+    let syncLabel = '⚠️ Descuadrado';
+    let isSynced = false;
+
+    if (turnsPerBossTurn >= 1.9) {
+      syncLabel = '2:1 Cuadrado (2 turnos por ataque del Boss)';
+      isSynced = true;
+    } else if (turnsPerBossTurn >= 1.25 && turnsPerBossTurn <= 1.45) {
+      syncLabel = '4:3 Cuadrado (4 turnos cada 3 del Boss)';
+      isSynced = true;
+    } else if (turnsPerBossTurn >= 0.95 && turnsPerBossTurn <= 1.05) {
+      syncLabel = '1:1 Cuadrado (1 turno por ataque del Boss)';
+      isSynced = true;
+    } else if (effectiveRatioWithSpdBuff >= 1.75) {
+      syncLabel = '⚠️ Descuadrado (Cercano a 2:1 pero pierde rotación)';
+    }
+
+    const champName = m.championName || `Slot ${m.slotIndex + 1}`;
+    const champDmg = champTurns.reduce((acc, t) => acc + (t.damageDealtThisTurn || 0), 0);
+    const damagePercent = totalTeamDamage > 0 ? Math.round((champDmg / totalTeamDamage) * 100) : 0;
+
+    return {
+      slotIndex: m.slotIndex,
+      championName: champName,
+      slotColor: m.color,
+      trueSpeed: Math.round(trueSpd * 100) / 100,
+      effectiveSpeed: Math.round(trueSpd * 1.3 * 100) / 100,
+      ratioVsBoss: Math.round(ratioVsBoss * 100) / 100,
+      turnsTaken,
+      turnsPerBossTurn: Math.round(turnsPerBossTurn * 100) / 100,
+      syncLabel,
+      isSynced,
+      damageDealt: champDmg,
+      damagePercent,
+    };
+  });
+
   return {
     turns,
     totalBossTurns: bossTurnCount,
@@ -960,5 +1100,9 @@ export function runClanBossSimulation(
     totalTeamDamage,
     championDamageBreakdown: damageBreakdown,
     isInfiniteShieldSetup,
+    bossDifficulty: difficulty,
+    bossAffinity: affinity,
+    bossSpeed: bossBaseSpeed,
+    championSyncMetrics,
   };
 }

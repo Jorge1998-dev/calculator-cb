@@ -59,6 +59,18 @@ export function parseChampionSkills(champ: ChampionData | null): SkillConfig[] {
       passiveIdx++;
     } else {
       if (activeIdx <= 4) {
+        const dmgBasedOn = Array.isArray(s.damage_based_on) ? s.damage_based_on.map((x) => String(x).toUpperCase().trim()) : [];
+        let statScaling: import('../../types').DamageStatScaling | undefined;
+        const hasDef = dmgBasedOn.some((d) => d.includes('DEF'));
+        const hasHp = dmgBasedOn.some((d) => d.includes('HP'));
+        const hasAtk = dmgBasedOn.some((d) => d.includes('ATK'));
+        if (hasDef && hasHp) statScaling = 'DEF_HP';
+        else if (hasAtk && hasDef) statScaling = 'ATK_DEF';
+        else if (hasAtk && hasHp) statScaling = 'ATK_HP';
+        else if (hasDef) statScaling = 'DEF';
+        else if (hasHp) statScaling = 'HP';
+        else if (hasAtk) statScaling = 'ATK';
+
         parsed.push({
           id: `A${activeIdx}`,
           alias: `A${activeIdx}`,
@@ -69,6 +81,8 @@ export function parseChampionSkills(champ: ChampionData | null): SkillConfig[] {
           isPassive: false,
           disabled: false,
           isOpener: false,
+          damageBasedOn: dmgBasedOn,
+          damageStat: statScaling,
         });
         activeIdx++;
       }

@@ -43,10 +43,13 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
 
     for (const turn of simulation.turns) {
       if (turn.isBoss) {
+        bossTurnCount++;
+        if (bossTurnCount > 50) break; // Límite estricto canónico: Rondas 1 al 50
+
         const turnNum = bossTurnCount;
         const mod3 = turnNum % 3;
         const phase: 'AOE1' | 'AOE2' | 'STUN' =
-          mod3 === 0 ? 'AOE1' : mod3 === 1 ? 'AOE2' : 'STUN';
+          mod3 === 1 ? 'AOE1' : mod3 === 2 ? 'AOE2' : 'STUN';
 
         steps.push({
           bossTurnNumber: turnNum,
@@ -56,25 +59,11 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
         });
 
         currentChamps = [];
-        bossTurnCount++;
       } else {
-        currentChamps.push(turn);
+        if (bossTurnCount < 50) {
+          currentChamps.push(turn);
+        }
       }
-    }
-
-    // If remaining champion turns exist after last boss turn
-    if (currentChamps.length > 0) {
-      const turnNum = bossTurnCount;
-      const mod3 = turnNum % 3;
-      const phase: 'AOE1' | 'AOE2' | 'STUN' =
-        mod3 === 0 ? 'AOE1' : mod3 === 1 ? 'AOE2' : 'STUN';
-
-      steps.push({
-        bossTurnNumber: turnNum,
-        phase,
-        championActions: currentChamps,
-        bossAction: null,
-      });
     }
 
     // Group steps into 3-column cycles (AOE1, AOE2, STUN)
@@ -84,19 +73,19 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
       cycles.push({
         cycleIndex: cycleIdx,
         aoe1: steps[i] || {
-          bossTurnNumber: cycleIdx * 3,
+          bossTurnNumber: cycleIdx * 3 + 1,
           phase: 'AOE1',
           championActions: [],
           bossAction: null,
         },
         aoe2: steps[i + 1] || {
-          bossTurnNumber: cycleIdx * 3 + 1,
+          bossTurnNumber: cycleIdx * 3 + 2,
           phase: 'AOE2',
           championActions: [],
           bossAction: null,
         },
         stun: steps[i + 2] || {
-          bossTurnNumber: cycleIdx * 3 + 2,
+          bossTurnNumber: cycleIdx * 3 + 3,
           phase: 'STUN',
           championActions: [],
           bossAction: null,
@@ -118,15 +107,15 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
 
     if (relevantEffects.length === 0) return null;
 
-    // Consolidar efectos únicos por nombre (Raid no apila duplicados del mismo bufo en un campeón)
-    const uniqueMap = new Map<string, typeof relevantEffects[0]>();
-    for (const eff of relevantEffects) {
-      const existing = uniqueMap.get(eff.name);
-      if (!existing || eff.duration > existing.duration) {
-        uniqueMap.set(eff.name, eff);
+    // Consolidar efectos únicos por nombre de forma rápida y sin memory leak
+    const uniqueMap: Record<string, (typeof relevantEffects)[0]> = {};
+    for (let i = 0; i < relevantEffects.length; i++) {
+      const eff = relevantEffects[i];
+      if (!uniqueMap[eff.name] || eff.duration > uniqueMap[eff.name].duration) {
+        uniqueMap[eff.name] = eff;
       }
     }
-    const consolidatedEffects = Array.from(uniqueMap.values());
+    const consolidatedEffects = Object.values(uniqueMap);
 
     return (
       <div className="dwj-effects-cluster">
@@ -135,7 +124,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
             key={`${eff.name}-${idx}`}
             name={eff.name}
             type={eff.type}
-            duration={eff.duration}
+            duration={eff.name === 'intercept' ? (eff.amount || 2) : eff.duration}
+            amount={eff.amount}
             size="sm"
           />
         ))}
@@ -145,18 +135,26 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
 
   // Helper to render native Raid: Shadow Legends active debuffs on Clan Boss
   const renderBossDebuffs = (step: DeadwoodJediStep) => {
-    const bossAction = step.bossAction;
-    if (!bossAction) return null;
+    let debuffs = step.bossAction?.bossDebuffs;
 
-    const debuffs =
-      bossAction.bossDebuffs ||
-      (bossAction.effectsSnapshot
-        ? bossAction.effectsSnapshot.filter(
-            (e) => e.targetName === 'Clan Boss' || e.targetName.toLowerCase().includes('boss')
-          )
-        : []);
+    if (!debuffs || debuffs.length === 0) {
+      if (step.bossAction?.effectsSnapshot) {
+        debuffs = step.bossAction.effectsSnapshot
+          .filter((e) => e.targetName === 'Clan Boss' || e.targetName.toLowerCase().includes('boss'))
+          .map((e) => ({ name: e.name, type: 'debuff' as const, duration: e.duration, amount: e.amount }));
+      } else if (step.championActions.length > 0) {
+        const lastChamp = step.championActions[step.championActions.length - 1];
+        if (lastChamp.bossDebuffs && lastChamp.bossDebuffs.length > 0) {
+          debuffs = lastChamp.bossDebuffs;
+        } else if (lastChamp.effectsSnapshot) {
+          debuffs = lastChamp.effectsSnapshot
+            .filter((e) => e.targetName === 'Clan Boss' || e.targetName.toLowerCase().includes('boss'))
+            .map((e) => ({ name: e.name, type: 'debuff' as const, duration: e.duration, amount: e.amount }));
+        }
+      }
+    }
 
-    if (debuffs.length === 0) return null;
+    if (!debuffs || debuffs.length === 0) return null;
 
     return (
       <div className="dwj-boss-debuffs" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -178,6 +176,35 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
 
   // Helper to render a single step cell in DeadwoodJedi 3-column format
   const renderStepCell = (step: DeadwoodJediStep) => {
+    if (step.bossTurnNumber > 50) {
+      return (
+        <div
+          className="dwj-step-cell dwj-step-completed"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '80px',
+            background: 'rgba(15, 23, 42, 0.4)',
+            border: '1px dashed rgba(255, 255, 255, 0.1)',
+            borderRadius: '6px',
+            padding: '12px',
+            textAlign: 'center',
+            gap: '4px',
+          }}
+        >
+          <span style={{ fontSize: '1.2rem' }}>🏁</span>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#facc15' }}>
+            Fin de Batalla (Turno 50)
+          </span>
+          <span style={{ fontSize: '0.65rem', color: '#64748b' }}>
+            Límite canónico completado
+          </span>
+        </div>
+      );
+    }
+
     const isStun = step.phase === 'STUN';
     const isAoe2 = step.phase === 'AOE2';
 
@@ -188,8 +215,20 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
       ? 'rgba(251, 146, 60, 0.12)'
       : 'rgba(248, 113, 113, 0.12)';
 
-    // Track how many times each champion acts in this step
-    const champOccurrences = new Map<string, number>();
+    // Precalcular cuántas veces actúa cada campeón antes de este ataque del Boss
+    const totalActionsPerChamp: Record<string, number> = {};
+    for (let i = 0; i < step.championActions.length; i++) {
+      const a = step.championActions[i];
+      totalActionsPerChamp[a.actorName] = (totalActionsPerChamp[a.actorName] || 0) + 1;
+    }
+
+    // Estado de sincronización matemática de este paso
+    const totalStepActions = step.championActions.length;
+    const isStep2to1 = totalStepActions === 10;
+    const isStep1to1 = totalStepActions === 5;
+
+    // Rastrear ocurrencias de turnos por campeón en este paso
+    const champOccurrences: Record<string, number> = {};
 
     const stunTarget = step.bossAction?.stunTarget;
     const stunResult = step.bossAction?.stunResult;
@@ -203,10 +242,53 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
               selectedChampFilter === 'all' ||
               action.actorName.toLowerCase() === selectedChampFilter.toLowerCase();
 
-            // DeadwoodJedi rule: 1st action in step = 'Turn', 2nd or subsequent = bossTurnNumber
-            const count = (champOccurrences.get(action.actorName) || 0) + 1;
-            champOccurrences.set(action.actorName, count);
-            const turnLabel = count === 1 ? 'Turn' : `${step.bossTurnNumber}`;
+            // Indicador de Turno Cuadrado en base a Velocidad Real
+            const count = (champOccurrences[action.actorName] || 0) + 1;
+            champOccurrences[action.actorName] = count;
+            const totalForThisChamp = totalActionsPerChamp[action.actorName] || 1;
+
+            let turnLabel = `T${count}/2 [2:1]`;
+            let turnBadgeStyle = {
+              color: '#4ade80',
+              backgroundColor: 'rgba(74, 222, 128, 0.15)',
+              border: '1px solid rgba(74, 222, 128, 0.4)',
+            };
+            let turnTitle = `Turno ${count} de 2 antes del golpe del Boss (Sincronía 2:1 Cuadrada)`;
+
+            if (totalForThisChamp >= 2) {
+              turnLabel = `T${count}/2 [2:1]`;
+              turnBadgeStyle = {
+                color: '#4ade80',
+                backgroundColor: 'rgba(74, 222, 128, 0.15)',
+                border: '1px solid rgba(74, 222, 128, 0.4)',
+              };
+              turnTitle = `Turno ${count} de 2 antes del golpe del Boss (Sincronía 2:1 Cuadrada)`;
+            } else if (totalStepActions >= 6) {
+              // El equipo está intentando ciclo 2:1 pero este campeón sólo metió 1 acción -> DESCUADRADO
+              turnLabel = `⚠️ T1/1 (Descuadrado)`;
+              turnBadgeStyle = {
+                color: '#f87171',
+                backgroundColor: 'rgba(239, 68, 68, 0.22)',
+                border: '1px solid rgba(239, 68, 68, 0.5)',
+              };
+              turnTitle = `⚠️ Descuadre en Ticks: este campeón sólo obtuvo 1 turno antes del ataque del Boss en lugar de 2`;
+            } else if (totalStepActions === 5) {
+              turnLabel = `T1/1 [1:1]`;
+              turnBadgeStyle = {
+                color: '#60a5fa',
+                backgroundColor: 'rgba(96, 165, 250, 0.15)',
+                border: '1px solid rgba(96, 165, 250, 0.4)',
+              };
+              turnTitle = `Turno único antes del golpe del Boss (Sincronía 1:1 Cuadrada)`;
+            } else {
+              turnLabel = `T${count}`;
+              turnBadgeStyle = {
+                color: '#cbd5e1',
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+              };
+              turnTitle = `Turno de acción`;
+            }
 
             const alias = action.skillUsed.alias;
             const skillIcon =
@@ -230,14 +312,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
                     : 'rgba(59, 130, 246, 0.3)',
                 }}
               >
-                {/* Left: Champion Avatar & Name (Punto 1) */}
+                {/* Left: Champion Name only (Avatar removed per user directive) */}
                 <div className="dwj-champ-left">
-                  <ChampionAvatar
-                    name={action.actorName}
-                    size="xs"
-                    slotColor={action.color}
-                    showAffinity={false}
-                  />
                   <span className="dwj-champ-name" title={action.actorName}>
                     {action.actorName}
                   </span>
@@ -302,7 +378,11 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
                       </span>
                     )}
                   </span>
-                  <span className={`dwj-turn-text ${count > 1 ? 'extra-turn' : ''}`}>
+                  <span
+                    className={`dwj-turn-text ${count > 1 ? 'extra-turn' : ''}`}
+                    style={turnBadgeStyle}
+                    title={turnTitle}
+                  >
                     {turnLabel}
                   </span>
                 </div>
@@ -326,6 +406,45 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
           </div>
 
           <div className="dwj-boss-right">
+            {/* Badge de Cuadre de este Paso */}
+            <span
+              style={{
+                fontSize: '0.62rem',
+                fontWeight: 800,
+                padding: '2px 6px',
+                borderRadius: '4px',
+                border: '1px solid',
+                backgroundColor: isStep2to1
+                  ? 'rgba(74, 222, 128, 0.15)'
+                  : isStep1to1
+                  ? 'rgba(96, 165, 250, 0.15)'
+                  : 'rgba(239, 68, 68, 0.2)',
+                borderColor: isStep2to1
+                  ? 'rgba(74, 222, 128, 0.4)'
+                  : isStep1to1
+                  ? 'rgba(96, 165, 250, 0.4)'
+                  : 'rgba(239, 68, 68, 0.5)',
+                color: isStep2to1
+                  ? '#4ade80'
+                  : isStep1to1
+                  ? '#60a5fa'
+                  : '#f87171',
+              }}
+              title={
+                isStep2to1
+                  ? 'Sincronía 2:1 Cuadrada (10 acciones de campeones)'
+                  : isStep1to1
+                  ? 'Sincronía 1:1 Cuadrada (5 acciones de campeones)'
+                  : `⚠️ Descuadre de Velocidad: ${totalStepActions} acciones antes de este ataque del Boss`
+              }
+            >
+              {isStep2to1
+                ? '🟢 2:1 (10)'
+                : isStep1to1
+                ? '🔵 1:1 (5)'
+                : `⚠️ Descuadre (${totalStepActions})`}
+            </span>
+
             {isStun && stunTarget && (
               <span
                 style={{
@@ -385,7 +504,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
               className="dwj-boss-turn-num"
               style={{ color: phaseColor }}
             >
-              {step.bossTurnNumber}
+              Turno {step.bossTurnNumber}
             </span>
           </div>
         </div>
@@ -399,7 +518,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
       {simulation.isInfiniteShieldSetup && (
         <div
           style={{
-            marginBottom: '16px',
+            marginBottom: '4px',
             padding: '12px 18px',
             borderRadius: '10px',
             background: 'linear-gradient(90deg, rgba(234, 179, 8, 0.22) 0%, rgba(168, 85, 247, 0.18) 100%)',
@@ -439,11 +558,187 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
               </div>
             )}
             <span style={{ fontSize: '0.78rem', color: '#a78bfa', fontWeight: 700, background: 'rgba(168, 85, 247, 0.15)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-              ⚡ Supervivencia hasta 1,500 Turnos
+              ⚡ 50 Rondas Canónicas Garantizadas
             </span>
           </div>
         </div>
       )}
+
+      {/* PANEL DE RENDIMIENTO: ESTIMADO DE TURNOS Y DAÑO POR CAMPEÓN (RONDAS 1 AL 50) */}
+      <div className="dwj-performance-dashboard">
+        <div className="dwj-perf-header">
+          <div className="dwj-perf-title-area">
+            <h3 className="dwj-perf-title">
+              <span>📊</span> Resumen de Rendimiento (Turnos 1 al 50 del Clan Boss)
+            </h3>
+            <p className="dwj-perf-sub">
+              Cálculo y desglose canónico de turnos estimados y daño acumulado para {simulation.bossDifficulty || 'Clan Boss'} ({simulation.bossSpeed} SPD).
+            </p>
+          </div>
+
+          <div className="dwj-perf-kpis">
+            {simulation.totalTeamDamage !== undefined && simulation.totalTeamDamage > 0 && (
+              <div className="dwj-perf-kpi-pill">
+                <span className="dwj-perf-kpi-label">Daño Total Proyectado</span>
+                <span className="dwj-perf-kpi-val" style={{ color: '#f87171' }}>
+                  {(simulation.totalTeamDamage / 1_000_000).toFixed(1)}M
+                </span>
+              </div>
+            )}
+
+            <div className="dwj-perf-kpi-pill">
+              <span className="dwj-perf-kpi-label">Turnos Totales de Escuadrón</span>
+              <span className="dwj-perf-kpi-val" style={{ color: '#38bdf8' }}>
+                {simulation.championSyncMetrics
+                  ? simulation.championSyncMetrics.reduce((acc, m) => acc + m.turnsTaken, 0)
+                  : simulation.turns.filter((t) => !t.isBoss).length}{' '}
+                Turnos
+              </span>
+            </div>
+
+            <div className="dwj-perf-kpi-pill">
+              <span className="dwj-perf-kpi-label">Rondas de Clan Boss</span>
+              <span className="dwj-perf-kpi-val" style={{ color: '#facc15' }}>
+                {Math.min(simulation.totalBossTurns, 50)} / 50
+              </span>
+            </div>
+
+            {(() => {
+              const allSynced =
+                simulation.championSyncMetrics && simulation.championSyncMetrics.length > 0
+                  ? simulation.championSyncMetrics.every((m) => m.isSynced)
+                  : false;
+              return (
+                <div
+                  className="dwj-perf-kpi-pill"
+                  style={{
+                    borderColor: allSynced ? 'rgba(74, 222, 128, 0.4)' : 'rgba(239, 68, 68, 0.4)',
+                    background: allSynced ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  }}
+                >
+                  <span className="dwj-perf-kpi-label">Estado de Sintonía</span>
+                  <span
+                    className="dwj-perf-kpi-val"
+                    style={{ color: allSynced ? '#4ade80' : '#f87171', fontSize: '0.9rem' }}
+                  >
+                    {allSynced ? '✓ 5/5 Cuadrados' : '⚠️ Descuadre Detectado'}
+                  </span>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* 5-Champion Cards Grid */}
+        <div className="dwj-perf-champs-grid">
+          {(simulation.championSyncMetrics || []).map((metric) => {
+            const dmgFormatted =
+              metric.damageDealt !== undefined
+                ? metric.damageDealt >= 1_000_000
+                  ? `${(metric.damageDealt / 1_000_000).toFixed(1)}M`
+                  : `${(metric.damageDealt / 1_000).toFixed(0)}k`
+                : '0';
+
+            const isTitus = metric.championName.toLowerCase().includes('titus');
+            const isWixwell = metric.championName.toLowerCase().includes('wixwell');
+
+            return (
+              <div
+                key={`metric-slot-${metric.slotIndex}`}
+                className="dwj-perf-champ-card"
+                style={{
+                  borderLeft: `4px solid ${metric.slotColor || '#38bdf8'}`,
+                  borderColor: metric.isSynced
+                    ? 'rgba(255, 255, 255, 0.12)'
+                    : 'rgba(239, 68, 68, 0.45)',
+                }}
+              >
+                {/* Header: Avatar, Name, Speed */}
+                <div className="dwj-perf-champ-header">
+                  <ChampionAvatar
+                    name={metric.championName}
+                    size="xs"
+                    slotColor={metric.slotColor}
+                    showAffinity={false}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flexGrow: 1 }}>
+                    <span className="dwj-perf-champ-name" title={metric.championName}>
+                      {metric.championName}
+                    </span>
+                    <span style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 600 }}>
+                      {isTitus ? 'DEF + HP Híbrido' : isWixwell ? 'Escudos / DEF' : 'Slot ' + (metric.slotIndex + 1)}
+                    </span>
+                  </div>
+                  <span className="dwj-perf-champ-spd" title="Velocidad real (True Speed)">
+                    {metric.trueSpeed} SPD
+                  </span>
+                </div>
+
+                {/* Metrics Row: Turnos Estimados & Daño Estimado */}
+                <div className="dwj-perf-metrics-row">
+                  {/* Metric 1: Turnos Estimados */}
+                  <div className="dwj-perf-metric-box">
+                    <span className="dwj-perf-metric-lbl">Turnos Est.</span>
+                    <span className="dwj-perf-metric-num" style={{ color: '#38bdf8' }}>
+                      {metric.turnsTaken}
+                    </span>
+                    <span className="dwj-perf-metric-sub">
+                      {metric.turnsPerBossTurn.toFixed(2)}x / ronda
+                    </span>
+                  </div>
+
+                  {/* Metric 2: Daño Estimado */}
+                  <div className="dwj-perf-metric-box">
+                    <span className="dwj-perf-metric-lbl">Daño Est.</span>
+                    <span className="dwj-perf-metric-num" style={{ color: '#f87171' }}>
+                      {dmgFormatted}
+                    </span>
+                    <span className="dwj-perf-metric-sub">
+                      {metric.damagePercent || 0}% del total
+                    </span>
+                  </div>
+                </div>
+
+                {/* Sintonía Status Badge */}
+                <div
+                  className="dwj-perf-sync-badge"
+                  style={{
+                    backgroundColor: metric.isSynced
+                      ? 'rgba(74, 222, 128, 0.15)'
+                      : 'rgba(239, 68, 68, 0.18)',
+                    borderColor: metric.isSynced
+                      ? 'rgba(74, 222, 128, 0.4)'
+                      : 'rgba(239, 68, 68, 0.5)',
+                    color: metric.isSynced ? '#4ade80' : '#f87171',
+                  }}
+                  title={metric.syncLabel}
+                >
+                  {metric.isSynced
+                    ? metric.turnsPerBossTurn >= 1.9
+                      ? '🟢 2:1 Cuadrado'
+                      : metric.turnsPerBossTurn >= 1.25
+                      ? '🟢 4:3 Cuadrado'
+                      : '🔵 1:1 Cuadrado'
+                    : '⚠️ Descuadrado'}
+                </div>
+
+                {/* Damage Contribution Progress Bar */}
+                <div className="dwj-perf-dmg-bar-container" title={`Contribución al daño: ${metric.damagePercent || 0}%`}>
+                  <div
+                    className="dwj-perf-dmg-bar-fill"
+                    style={{
+                      width: `${Math.min(100, Math.max(2, metric.damagePercent || 0))}%`,
+                      background: metric.slotColor
+                        ? `linear-gradient(90deg, ${metric.slotColor} 0%, #f87171 100%)`
+                        : 'linear-gradient(90deg, #38bdf8 0%, #f87171 100%)',
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Top Header Bar */}
       <div className="dwj-header-bar">
@@ -452,9 +747,32 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
             <h2 className="dwj-title">
               <span>⚔️</span> Matriz de Combate (DeadwoodJedi Speed Engine)
             </h2>
-            <span className="dwj-sync-badge">
-              ✓ {simulation.totalBossTurns} Rondas Sincronizadas
-            </span>
+            {(() => {
+              const allSynced = simulation.championSyncMetrics && simulation.championSyncMetrics.length > 0
+                ? simulation.championSyncMetrics.every((m) => m.isSynced)
+                : false;
+              const diffLabel = simulation.bossDifficulty || 'Clan Boss';
+              const spdLabel = simulation.bossSpeed ? `${simulation.bossSpeed} SPD` : '';
+              return (
+                <span
+                  className="dwj-sync-badge"
+                  style={{
+                    backgroundColor: allSynced ? 'rgba(74, 222, 128, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                    borderColor: allSynced ? 'rgba(74, 222, 128, 0.5)' : 'rgba(239, 68, 68, 0.5)',
+                    color: allSynced ? '#4ade80' : '#f87171',
+                  }}
+                  title={
+                    allSynced
+                      ? `Sintonía cuadrada para ${diffLabel} (${spdLabel})`
+                      : `Rotación descuadrada en ${diffLabel} (${spdLabel}): los campeones pierden turnos`
+                  }
+                >
+                  {allSynced
+                    ? `✓ ${Math.min(simulation.totalBossTurns, 50)} Rondas Cuadradas (${diffLabel})`
+                    : `⚠️ Descuadrado en ${diffLabel} (${spdLabel})`}
+                </span>
+              );
+            })()}
             {simulation.totalTeamDamage !== undefined && simulation.totalTeamDamage > 0 && (
               <span
                 style={{
@@ -498,7 +816,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
           </div>
 
           <span className="dwj-actions-counter">
-            {simulation.turns.length} Acciones
+            {simulation.turns.filter((t) => t.bossRound <= 50).length} Acciones
           </span>
         </div>
       </div>
@@ -537,35 +855,41 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
           <div className="dwj-columns-header">
             <div className="dwj-col-header aoe1">
               <span className="dwj-col-title">AOE1</span>
-              <span className="dwj-col-desc">Ataque en Área 1 (Turnos 0, 3, 6, 9...)</span>
+              <span className="dwj-col-desc">Ataque en Área 1 (Turnos 1, 4, 7, 10...)</span>
             </div>
             <div className="dwj-col-header aoe2">
               <span className="dwj-col-title">AOE2</span>
-              <span className="dwj-col-desc">Ataque en Área 2 (Turnos 1, 4, 7, 10...)</span>
+              <span className="dwj-col-desc">Ataque en Área 2 (Turnos 2, 5, 8, 11...)</span>
             </div>
             <div className="dwj-col-header stun">
               <span className="dwj-col-title">STUN</span>
-              <span className="dwj-col-desc">Aturdimiento Único (Turnos 2, 5, 8, 11...)</span>
+              <span className="dwj-col-desc">Aturdimiento Único (Turnos 3, 6, 9, 12...)</span>
             </div>
           </div>
 
           {/* Cycles Rows (Each row contains 1 complete 3-turn rotation) */}
           <div className="dwj-cycles-rows">
             {groupedCycles.map((cycle) => (
-              <div key={`cycle-${cycle.cycleIndex}`} className="dwj-cycle-row">
-                {/* Column 1: AOE1 */}
-                <div className="dwj-cycle-cell">
-                  {renderStepCell(cycle.aoe1)}
+              <div key={`cycle-${cycle.cycleIndex}`} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 8px', fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>
+                  <span>🔄 Ciclo {cycle.cycleIndex + 1}</span>
+                  <span>Rondas {cycle.cycleIndex * 3 + 1} - {Math.min((cycle.cycleIndex + 1) * 3, 50)}</span>
                 </div>
+                <div className="dwj-cycle-row">
+                  {/* Column 1: AOE1 */}
+                  <div className="dwj-cycle-cell">
+                    {renderStepCell(cycle.aoe1)}
+                  </div>
 
-                {/* Column 2: AOE2 */}
-                <div className="dwj-cycle-cell">
-                  {renderStepCell(cycle.aoe2)}
-                </div>
+                  {/* Column 2: AOE2 */}
+                  <div className="dwj-cycle-cell">
+                    {renderStepCell(cycle.aoe2)}
+                  </div>
 
-                {/* Column 3: STUN */}
-                <div className="dwj-cycle-cell">
-                  {renderStepCell(cycle.stun)}
+                  {/* Column 3: STUN */}
+                  <div className="dwj-cycle-cell">
+                    {renderStepCell(cycle.stun)}
+                  </div>
                 </div>
               </div>
             ))}
@@ -576,7 +900,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ simulation }) => {
       {/* LINEAR LIST VIEW (Fallback) */}
       {viewMode === 'list' && (
         <div className="timeline-grid-container">
-          {groupedCycles.flatMap((c) => [c.aoe1, c.aoe2, c.stun]).map((step) => (
+          {groupedCycles.flatMap((c) => [c.aoe1, c.aoe2, c.stun]).filter((s) => s.bossTurnNumber <= 50).map((step) => (
             <div
               key={`list-step-${step.bossTurnNumber}`}
               className="boss-round-card"
